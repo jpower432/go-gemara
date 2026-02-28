@@ -1,8 +1,8 @@
 module github.com/gemaraproj/go-gemara
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.24.5
+toolchain go1.24.13
 
 require (
 	github.com/defenseunicorns/go-oscal v0.7.0
