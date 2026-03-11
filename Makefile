@@ -10,7 +10,7 @@ GOFLAGS :=
 COVERFILE := coverage.out
 TESTCOVERAGE_THRESHOLD := 71
 GOLANGCI_LINT := golangci-lint
-SPECVERSION := v0.19.1
+SPECVERSION := v0.20.0
 
 .PHONY: all tidy fmtcheck fmt vet lint test testcov race coverage-check build install generate ci-local clean help
 
@@ -137,7 +137,7 @@ install:
 
 # Generate files from CUE schemas
 # Generates Go types from the Gemara CUE package with stable and experimental variants
-generate:
+old-nonfunctional-generate:
 	@echo " > Generating types from Gemara CUE package"
 	@cue def github.com/gemaraproj/gemara@$(SPECVERSION) --outfile schema.cue
 
@@ -150,13 +150,12 @@ generate:
 	@go run ./cmd/typestagger generated_types.go
 	@rm schema.cue
 
-# Generate files from CUE schemas
-# Generates Go types from the Gemara CUE package with stable and experimental variants
 genlocal:
 	@echo " > Generating types from 'gemara' package"
 	@cue exp gengotypes ../gemara:gemara
 	@mv ../gemara/cue_types_gemara_gen.go generated_types.go
 	@go run ./cmd/typestagger generated_types.go
+	@rm schema.cue
 
 # Runs the small subset used by CI for a quick local check
 ci-local: fmtcheck vet lint testcov coverage-check
