@@ -364,9 +364,6 @@ type GuidanceCatalog struct {
 	Exemptions []Exemption `json:"exemptions,omitempty" yaml:"exemptions,omitempty"`
 }
 
-// GuidanceType restricts the possible types that a catalog may be listed as
-type GuidanceType string
-
 // Guideline provides explanatory context and recommendations for designing optimal outcomes
 type Guideline struct {
 	// id allows this entry to be referenced by other elements
@@ -505,13 +502,90 @@ type EntryReference struct {
 	EntryType EntryType `json:"entry-type" yaml:"entry-type"`
 }
 
+// Email represents a validated email address pattern
+type Email string
+
+// Owner defines the RACI roles responsible for managing an artifact such as a risk
+type RACI struct {
+	// responsible identifies the entities responsible for executing work to manage or mitigate the artifact
+	Responsible []Contact `json:"responsible" yaml:"responsible"`
+
+	// accountable identifies the entity ultimately accountable for the outcome
+	Accountable []Contact `json:"accountable" yaml:"accountable"`
+
+	// consulted identifies entities whose input is required when assessing or responding to the artifact
+	Consulted []Contact `json:"consulted,omitempty" yaml:"consulted,omitempty"`
+
+	// informed identifies entities that should be notified about changes to the artifact status
+	Informed []Contact `json:"informed,omitempty" yaml:"informed,omitempty"`
+}
+
+// A RiskCatalog is a structured collection of documented risks that may affect an organization,
+// system, or service. It provides a centralized reference for risks that can be mapped to threats
+// and referenced by policies when documenting how those risks are mitigated or accepted.
+type RiskCatalog struct {
+	// title describes the contents of this catalog at a glance
+	Title string `json:"title" yaml:"title"`
+
+	// metadata provides detailed data about this catalog
+	Metadata Metadata `json:"metadata" yaml:"metadata"`
+
+	// categories is a list of risk categories used to classify risks
+	Categories []RiskCategory `json:"categories,omitempty" yaml:"categories,omitempty"`
+
+	// risks is a list of risks defined by this catalog
+	Risks []Risk `json:"risks,omitempty" yaml:"risks,omitempty"`
+}
+
+// RiskCategory describes a grouping of risks and defines appetite boundaries
+type RiskCategory struct {
+	// appetite defines the acceptable level of risk for this category
+	Appetite RiskAppetite `json:"appetite" yaml:"appetite"`
+
+	// id allows this entry to be referenced by other elements
+	Id string `json:"id" yaml:"id"`
+
+	// max-severity defines the highest allowed severity within this category
+	MaxSeverity Severity `json:"max-severity,omitempty" yaml:"max-severity,omitempty"`
+
+	// title describes the purpose of this group at a glance
+	Title string `json:"title" yaml:"title"`
+
+	// description explains the significance and traits of entries to this group
+	Description string `json:"description" yaml:"description"`
+}
+
+// A Risk represents the potential for negative impact resulting from one or more threats.
+type Risk struct {
+	// id allows this risk to be referenced by other elements
+	Id string `json:"id" yaml:"id"`
+
+	// title describes the risk
+	Title string `json:"title" yaml:"title"`
+
+	// description explains the risk scenario
+	Description string `json:"description" yaml:"description"`
+
+	// severity describes the impact level
+	Severity Severity `json:"severity" yaml:"severity"`
+
+	// owner defines the RACI roles responsible for managing this risk
+	Owner RACI `json:"owner,omitempty" yaml:"owner,omitempty"`
+
+	// impact describes the business or operational impact
+	Impact string `json:"impact,omitempty" yaml:"impact,omitempty"`
+
+	// threats link this risk to Layer 2 threats
+	Threats []MultiEntryMapping `json:"threats,omitempty" yaml:"threats,omitempty"`
+}
+
 // Policy represents a policy document with metadata, contacts, scope, imports, implementation plan, risks, and adherence requirements.
 type Policy struct {
 	Title string `json:"title" yaml:"title"`
 
 	Metadata Metadata `json:"metadata" yaml:"metadata"`
 
-	Contacts Contacts `json:"contacts" yaml:"contacts"`
+	Contacts RACI `json:"contacts" yaml:"contacts"`
 
 	Scope Scope `json:"scope" yaml:"scope"`
 
@@ -522,21 +596,6 @@ type Policy struct {
 	Risks Risks `json:"risks,omitempty" yaml:"risks,omitempty"`
 
 	Adherence Adherence `json:"adherence" yaml:"adherence"`
-}
-
-// Contacts defines RACI roles for policy compliance and notification.
-type Contacts struct {
-	// responsible is the person or group responsible for implementing controls for technical requirements
-	Responsible []Contact `json:"responsible" yaml:"responsible"`
-
-	// accountable is the person or group accountable for evaluating and enforcing the efficacy of technical controls
-	Accountable []Contact `json:"accountable" yaml:"accountable"`
-
-	// consulted is an optional person or group who may be consulted for more information about the technical requirements
-	Consulted []Contact `json:"consulted,omitempty" yaml:"consulted,omitempty"`
-
-	// informed is an optional person or group who must receive updates about compliance with this policy
-	Informed []Contact `json:"informed,omitempty" yaml:"informed,omitempty"`
 }
 
 // Scope defines what is included and excluded from policy applicability.
@@ -615,9 +674,6 @@ type AssessmentRequirementModifier struct {
 	Recommendation string `json:"recommendation,omitempty" yaml:"recommendation,omitempty"`
 }
 
-// ModType defines the type of modification to the assessment requirement.
-type ModType string
-
 // GuidanceImport defines how to import guidance documents with optional exclusions and constraints.
 type GuidanceImport struct {
 	ReferenceId string `json:"reference-id" yaml:"reference-id"`
@@ -649,19 +705,38 @@ type ImplementationDetails struct {
 // Risks defines mitigated and accepted risks addressed by this policy.
 type Risks struct {
 	// Mitigated risks only need reference-id and risk-id (no justification required)
-	Mitigated []MultiEntryMapping `json:"mitigated,omitempty" yaml:"mitigated,omitempty"`
+	Mitigated []MitigatedRisk `json:"mitigated,omitempty" yaml:"mitigated,omitempty"`
 
 	// Accepted risks require rationale (justification) and may include scope. Controls addressing these risks are implicitly identified through threat mappings.
 	Accepted []AcceptedRisk `json:"accepted,omitempty" yaml:"accepted,omitempty"`
 }
 
-// RiskMapping maps a risk to a reference and optionally includes scope and justification.
+// MitigatedRisk represents a risk addressed by the policy
+type MitigatedRisk struct {
+	// id allows this mitigated risk entry to be referenced by accepted risks
+	Id string `json:"id" yaml:"id"`
+
+	// risk references the risk being mitigated
+	Risk EntryMapping `json:"risk" yaml:"risk"`
+}
+
+// AcceptedRisk documents a risk the organization has chosen to accept,
+// optionally linking it to a mitigated risk when the acceptance covers
+// residual risk after partial mitigation.
 type AcceptedRisk struct {
+	// id allows this accepted risk entry to be referenced
+	Id string `json:"id" yaml:"id"`
+
+	// target-id optionally links this acceptance to a mitigated risk entry
+	Target_id string `json:"target-id,omitempty" yaml:"target-id,omitempty"`
+
+	// risk references the risk being accepted
 	Risk EntryMapping `json:"risk" yaml:"risk"`
 
-	// Scope and justification are only required for accepted risks (e.g., risk is accepted for TLP:Green and TLP:Clear because they contain non-sensitive data)
+	// scope defines where the risk acceptance applies
 	Scope Scope `json:"scope,omitempty" yaml:"scope,omitempty"`
 
+	// justification explains why the risk is accepted
 	Justification string `json:"justification,omitempty" yaml:"justification,omitempty"`
 }
 
@@ -684,8 +759,6 @@ type AcceptedMethod struct {
 
 	Executor Actor `json:"executor,omitempty" yaml:"executor,omitempty"`
 }
-
-type MethodType string
 
 // AssessmentPlan defines how a specific assessment requirement is evaluated.
 type AssessmentPlan struct {
@@ -712,9 +785,6 @@ type Parameter struct {
 
 	AcceptedValues []string `json:"accepted-values,omitempty" yaml:"accepted-values,omitempty"`
 }
-
-// Email represents a validated email address pattern
-type Email string
 
 // ThreatCatalog describes a set of topically-associated threats
 type ThreatCatalog struct {

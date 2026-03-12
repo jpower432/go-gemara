@@ -13,11 +13,6 @@ func TestConfidenceLevel_String(t *testing.T) {
 		want  string
 	}{
 		{
-			name:  "NotSet level",
-			level: NotSet,
-			want:  "Not Set",
-		},
-		{
 			name:  "Undetermined level",
 			level: Undetermined,
 			want:  "Undetermined",
@@ -54,12 +49,6 @@ func TestConfidenceLevel_MarshalYAML(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{
-			name:    "NotSet level",
-			level:   NotSet,
-			want:    "Not Set",
-			wantErr: false,
-		},
 		{
 			name:    "Undetermined level",
 			level:   Undetermined,
@@ -106,12 +95,6 @@ func TestConfidenceLevel_MarshalJSON(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{
-			name:    "NotSet level",
-			level:   NotSet,
-			want:    `"Not Set"`,
-			wantErr: false,
-		},
 		{
 			name:    "Undetermined level",
 			level:   Undetermined,

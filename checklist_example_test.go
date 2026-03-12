@@ -23,11 +23,11 @@ func ExamplePolicy_ToMarkdownChecklist() {
 					Frequency:     "monthly",
 					EvaluationMethods: []AcceptedMethod{
 						{
-							Type:        "automated",
+							Type:        MethodAutomated,
 							Description: "Run automated access control audit script",
 						},
 						{
-							Type:        "manual",
+							Type:        MethodManual,
 							Description: "Review access control logs for anomalies",
 						},
 					},
@@ -39,7 +39,7 @@ func ExamplePolicy_ToMarkdownChecklist() {
 					Frequency:     "quarterly",
 					EvaluationMethods: []AcceptedMethod{
 						{
-							Type:        "automated",
+							Type:        MethodAutomated,
 							Description: "Verify encryption is enabled on all data stores",
 						},
 					},
@@ -51,7 +51,7 @@ func ExamplePolicy_ToMarkdownChecklist() {
 					Frequency:     "weekly",
 					EvaluationMethods: []AcceptedMethod{
 						{
-							Type:        "automated",
+							Type:        MethodAutomated,
 							Description: "Verify backup jobs completed successfully",
 						},
 					},
@@ -63,7 +63,7 @@ func ExamplePolicy_ToMarkdownChecklist() {
 					Frequency:     "monthly",
 					EvaluationMethods: []AcceptedMethod{
 						{
-							Type:        "manual",
+							Type:        MethodManual,
 							Description: "Test restore procedure from backup",
 						},
 					},

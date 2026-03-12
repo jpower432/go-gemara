@@ -41,7 +41,7 @@ func guidanceWithExternalExtends() gemara.GuidanceCatalog {
 				},
 			},
 		},
-		GuidanceType: "Framework",
+		GuidanceType: gemara.GuidanceFramework,
 		Families: []gemara.Family{
 			{
 				Id:          "AC",
@@ -91,7 +91,7 @@ func guidanceWithMerging() gemara.GuidanceCatalog {
 				},
 			},
 		},
-		GuidanceType: "Framework",
+		GuidanceType: gemara.GuidanceFramework,
 		Families: []gemara.Family{
 			{
 				Id:          "AC",
@@ -148,7 +148,7 @@ func guidanceWithLocalExtends() gemara.GuidanceCatalog {
 				Type: gemara.Human,
 			},
 		},
-		GuidanceType: gemara.GuidanceType("Framework"),
+		GuidanceType: gemara.GuidanceFramework,
 		Families: []gemara.Family{
 			{
 				Id:          "AC",
@@ -187,7 +187,7 @@ func guidanceWithMultiLevelNested() gemara.GuidanceCatalog {
 				Type: gemara.Human,
 			},
 		},
-		GuidanceType: gemara.GuidanceType("Framework"),
+		GuidanceType: gemara.GuidanceFramework,
 		Families: []gemara.Family{
 			{
 				Id:    "AC",
