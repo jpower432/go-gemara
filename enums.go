@@ -58,52 +58,34 @@ const (
 	PolicyArtifact
 	ThreatCatalogArtifact
 	VectorCatalogArtifact
-)
 
-const (
 	Human EntityType = iota
 	Software
 	SoftwareAssisted
-)
 
-const (
 	LifecycleActive Lifecycle = iota
 	LifecycleDraft
 	LifecycleDeprecated
 	LifecycleRetired
-)
 
-const (
 	EntryTypeGuideline EntryType = iota
 	EntryTypeStatement
 	EntryTypeControl
 	EntryTypeAssessmentRequirement
 	EntryTypeVector
-)
 
-const (
 	Undetermined ConfidenceLevel = iota
 	Low
 	Medium
 	High
-)
 
-const (
-	// RelImplements: source fulfills the target's objective
 	RelImplements RelationshipType = iota
-	// RelImplementedBy: target fulfills the source's objective (requirements-to-implementation direction)
 	RelImplementedBy
-	// RelSupports: source contributes to, but does not fully satisfy, the target
 	RelSupports
-	// RelSupportedBy: target contributes to, but does not fully satisfy, the source
 	RelSupportedBy
-	// RelEquivalent: source and target express the same intent
 	RelEquivalent
-	// RelSubsumes: source fully contains the target's scope and more
 	RelSubsumes
-	// RelNoMatch: source has no counterpart in the target artifact
 	RelNoMatch
-	// RelRelatesTo: source and target are related but the nature is unspecified
 	RelRelatesTo
 )
 
