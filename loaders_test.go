@@ -8,11 +8,26 @@ package gemara
 // Test data is pulled from ./test-data/
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// newTLSTestServer creates an HTTPS test server and configures
+// http.DefaultTransport to trust it. Returns the server and a
+// cleanup function that restores the original transport.
+func newTLSTestServer(handler http.Handler) (*httptest.Server, func()) {
+	srv := httptest.NewTLSServer(handler)
+	original := http.DefaultTransport
+	http.DefaultTransport = srv.Client().Transport
+	return srv, func() {
+		http.DefaultTransport = original
+		srv.Close()
+	}
+}
 
 // ============================================================================
 // Policy Tests
@@ -91,6 +106,9 @@ func TestPolicyDocument_LoadFile_UnsupportedFileType(t *testing.T) {
 }
 
 func TestPolicyDocument_LoadFile_URI(t *testing.T) {
+	srv, cleanup := newTLSTestServer(http.NotFoundHandler())
+	defer cleanup()
+
 	tests := []struct {
 		name          string
 		sourcePath    string
@@ -99,7 +117,7 @@ func TestPolicyDocument_LoadFile_URI(t *testing.T) {
 	}{
 		{
 			name:          "URI that returns a 404",
-			sourcePath:    "https://example.com/nonexistent.yaml",
+			sourcePath:    srv.URL + "/nonexistent.yaml",
 			wantErr:       true,
 			errorExpected: "failed to fetch URL; response status: 404 Not Found",
 		},
@@ -204,6 +222,9 @@ func TestGuidanceCatalog_LoadFiles_AppendsData(t *testing.T) {
 }
 
 func TestGuidanceCatalog_LoadFile_URI(t *testing.T) {
+	srv, cleanup := newTLSTestServer(http.NotFoundHandler())
+	defer cleanup()
+
 	tests := []struct {
 		name          string
 		sourcePath    string
@@ -212,7 +233,7 @@ func TestGuidanceCatalog_LoadFile_URI(t *testing.T) {
 	}{
 		{
 			name:          "URI that returns a 404",
-			sourcePath:    "https://example.com/nonexistent.yaml",
+			sourcePath:    srv.URL + "/nonexistent.yaml",
 			wantErr:       true,
 			errorExpected: "failed to fetch URL; response status: 404 Not Found",
 		},
