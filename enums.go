@@ -87,38 +87,28 @@ const (
 	RelSubsumes
 	RelNoMatch
 	RelRelatesTo
-)
 
-const (
 	MethodManual MethodType = iota
 	MethodBehavioral
 	MethodAutomated
 	MethodAutoremediation
 	MethodGate
-)
 
-const (
 	SeverityLow Severity = iota
 	SeverityMedium
 	SeverityHigh
 	SeverityCritical
-)
 
-const (
 	GuidanceStandard GuidanceType = iota
 	GuidanceRegulation
 	GuidanceBestPractice
 	GuidanceFramework
-)
 
-const (
 	RiskAppetiteZero RiskAppetite = iota
 	RiskAppetiteLow
 	RiskAppetiteModerate
 	RiskAppetiteHigh
-)
 
-const (
 	ModAdd ModType = iota
 	ModModify
 	ModRemove
@@ -126,166 +116,197 @@ const (
 	ModOverride
 )
 
-var toString = map[Result]string{
-	NotRun:        "Not Run",
-	Passed:        "Passed",
-	Failed:        "Failed",
-	NeedsReview:   "Needs Review",
-	NotApplicable: "Not Applicable",
-	Unknown:       "Unknown",
-}
+var (
+	toString = map[Result]string{
+		NotRun:        "Not Run",
+		Passed:        "Passed",
+		Failed:        "Failed",
+		NeedsReview:   "Needs Review",
+		NotApplicable: "Not Applicable",
+		Unknown:       "Unknown",
+	}
 
-var lifecycleToString = map[Lifecycle]string{
-	LifecycleActive:     "Active",
-	LifecycleDraft:      "Draft",
-	LifecycleDeprecated: "Deprecated",
-	LifecycleRetired:    "Retired",
-}
+	stringToResult = map[string]Result{
+		"Not Run":        NotRun,
+		"Passed":         Passed,
+		"Failed":         Failed,
+		"Needs Review":   NeedsReview,
+		"Not Applicable": NotApplicable,
+		"Unknown":        Unknown,
+	}
 
-var stringToLifecycle = map[string]Lifecycle{
-	"Active":     LifecycleActive,
-	"Draft":      LifecycleDraft,
-	"Deprecated": LifecycleDeprecated,
-	"Retired":    LifecycleRetired,
-}
+	lifecycleToString = map[Lifecycle]string{
+		LifecycleActive:     "Active",
+		LifecycleDraft:      "Draft",
+		LifecycleDeprecated: "Deprecated",
+		LifecycleRetired:    "Retired",
+	}
 
-var entityTypeToString = map[EntityType]string{
-	Human:            "Human",
-	Software:         "Software",
-	SoftwareAssisted: "Software-Assisted",
-}
+	stringToLifecycle = map[string]Lifecycle{
+		"Active":     LifecycleActive,
+		"Draft":      LifecycleDraft,
+		"Deprecated": LifecycleDeprecated,
+		"Retired":    LifecycleRetired,
+	}
 
-var stringToEntityType = map[string]EntityType{
-	"Human":             Human,
-	"Software":          Software,
-	"Software-Assisted": SoftwareAssisted,
-}
+	artifactTypeToString = map[ArtifactType]string{
+		ControlCatalogArtifact:  "Control Catalog",
+		EvaluationLogArtifact:   "Evaluation Log",
+		GuidanceCatalogArtifact: "Guidance Catalog",
+		MappingDocumentArtifact: "Mapping Document",
+		PolicyArtifact:          "Policy",
+		ThreatCatalogArtifact:   "Threat Catalog",
+		VectorCatalogArtifact:   "Vector Catalog",
+	}
 
-var entryTypeToString = map[EntryType]string{
-	EntryTypeGuideline:             "Guideline",
-	EntryTypeStatement:             "Statement",
-	EntryTypeControl:               "Control",
-	EntryTypeAssessmentRequirement: "AssessmentRequirement",
-	EntryTypeVector:                "Vector",
-}
+	stringToArtifactType = map[string]ArtifactType{
+		"Control Catalog":  ControlCatalogArtifact,
+		"Evaluation Log":   EvaluationLogArtifact,
+		"Guidance Catalog": GuidanceCatalogArtifact,
+		"Mapping Document": MappingDocumentArtifact,
+		"Policy":           PolicyArtifact,
+		"Threat Catalog":   ThreatCatalogArtifact,
+		"Vector Catalog":   VectorCatalogArtifact,
+	}
 
-var stringToEntryType = map[string]EntryType{
-	"Guideline":             EntryTypeGuideline,
-	"Statement":             EntryTypeStatement,
-	"Control":               EntryTypeControl,
-	"AssessmentRequirement": EntryTypeAssessmentRequirement,
-	"Vector":                EntryTypeVector,
-}
+	entityTypeToString = map[EntityType]string{
+		Human:            "Human",
+		Software:         "Software",
+		SoftwareAssisted: "Software-Assisted",
+	}
 
-var confidenceLevelToString = map[ConfidenceLevel]string{
-	Undetermined: "Undetermined",
-	Low:          "Low",
-	Medium:       "Medium",
-	High:         "High",
-}
+	stringToEntityType = map[string]EntityType{
+		"Human":             Human,
+		"Software":          Software,
+		"Software-Assisted": SoftwareAssisted,
+	}
 
-var stringToConfidenceLevel = map[string]ConfidenceLevel{
-	"Undetermined": Undetermined,
-	"Low":          Low,
-	"Medium":       Medium,
-	"High":         High,
-}
+	entryTypeToString = map[EntryType]string{
+		EntryTypeGuideline:             "Guideline",
+		EntryTypeStatement:             "Statement",
+		EntryTypeControl:               "Control",
+		EntryTypeAssessmentRequirement: "Assessment Requirement",
+		EntryTypeVector:                "Vector",
+	}
 
-var relationshipTypeToString = map[RelationshipType]string{
-	RelImplements:    "implements",
-	RelImplementedBy: "implemented-by",
-	RelSupports:      "supports",
-	RelSupportedBy:   "supported-by",
-	RelEquivalent:    "equivalent",
-	RelSubsumes:      "subsumes",
-	RelNoMatch:       "no-match",
-	RelRelatesTo:     "relates-to",
-}
+	stringToEntryType = map[string]EntryType{
+		"Guideline":              EntryTypeGuideline,
+		"Statement":              EntryTypeStatement,
+		"Control":                EntryTypeControl,
+		"Assessment Requirement": EntryTypeAssessmentRequirement,
+		"Vector":                 EntryTypeVector,
+	}
 
-var stringToRelationshipType = map[string]RelationshipType{
-	"implements":     RelImplements,
-	"implemented-by": RelImplementedBy,
-	"supports":       RelSupports,
-	"supported-by":   RelSupportedBy,
-	"equivalent":     RelEquivalent,
-	"subsumes":       RelSubsumes,
-	"no-match":       RelNoMatch,
-	"relates-to":     RelRelatesTo,
-}
+	confidenceLevelToString = map[ConfidenceLevel]string{
+		Undetermined: "Undetermined",
+		Low:          "Low",
+		Medium:       "Medium",
+		High:         "High",
+	}
 
-var methodTypeToString = map[MethodType]string{
-	MethodManual:          "Manual",
-	MethodBehavioral:      "Behavioral",
-	MethodAutomated:       "Automated",
-	MethodAutoremediation: "Autoremediation",
-	MethodGate:            "Gate",
-}
+	stringToConfidenceLevel = map[string]ConfidenceLevel{
+		"Undetermined": Undetermined,
+		"Low":          Low,
+		"Medium":       Medium,
+		"High":         High,
+	}
 
-var stringToMethodType = map[string]MethodType{
-	"Manual":          MethodManual,
-	"Behavioral":      MethodBehavioral,
-	"Automated":       MethodAutomated,
-	"Autoremediation": MethodAutoremediation,
-	"Gate":            MethodGate,
-}
+	relationshipTypeToString = map[RelationshipType]string{
+		RelImplements:    "implements",
+		RelImplementedBy: "implemented-by",
+		RelSupports:      "supports",
+		RelSupportedBy:   "supported-by",
+		RelEquivalent:    "equivalent",
+		RelSubsumes:      "subsumes",
+		RelNoMatch:       "no-match",
+		RelRelatesTo:     "relates-to",
+	}
 
-var severityToString = map[Severity]string{
-	SeverityLow:      "Low",
-	SeverityMedium:   "Medium",
-	SeverityHigh:     "High",
-	SeverityCritical: "Critical",
-}
+	stringToRelationshipType = map[string]RelationshipType{
+		"implements":     RelImplements,
+		"implemented-by": RelImplementedBy,
+		"supports":       RelSupports,
+		"supported-by":   RelSupportedBy,
+		"equivalent":     RelEquivalent,
+		"subsumes":       RelSubsumes,
+		"no-match":       RelNoMatch,
+		"relates-to":     RelRelatesTo,
+	}
 
-var stringToSeverity = map[string]Severity{
-	"Low":      SeverityLow,
-	"Medium":   SeverityMedium,
-	"High":     SeverityHigh,
-	"Critical": SeverityCritical,
-}
+	methodTypeToString = map[MethodType]string{
+		MethodManual:          "Manual",
+		MethodBehavioral:      "Behavioral",
+		MethodAutomated:       "Automated",
+		MethodAutoremediation: "Autoremediation",
+		MethodGate:            "Gate",
+	}
 
-var guidanceTypeToString = map[GuidanceType]string{
-	GuidanceStandard:     "Standard",
-	GuidanceRegulation:   "Regulation",
-	GuidanceBestPractice: "Best Practice",
-	GuidanceFramework:    "Framework",
-}
+	stringToMethodType = map[string]MethodType{
+		"Manual":          MethodManual,
+		"Behavioral":      MethodBehavioral,
+		"Automated":       MethodAutomated,
+		"Autoremediation": MethodAutoremediation,
+		"Gate":            MethodGate,
+	}
 
-var stringToGuidanceType = map[string]GuidanceType{
-	"Standard":      GuidanceStandard,
-	"Regulation":    GuidanceRegulation,
-	"Best Practice": GuidanceBestPractice,
-	"Framework":     GuidanceFramework,
-}
+	severityToString = map[Severity]string{
+		SeverityLow:      "Low",
+		SeverityMedium:   "Medium",
+		SeverityHigh:     "High",
+		SeverityCritical: "Critical",
+	}
 
-var riskAppetiteToString = map[RiskAppetite]string{
-	RiskAppetiteZero:     "Zero",
-	RiskAppetiteLow:      "Low",
-	RiskAppetiteModerate: "Moderate",
-	RiskAppetiteHigh:     "High",
-}
+	stringToSeverity = map[string]Severity{
+		"Low":      SeverityLow,
+		"Medium":   SeverityMedium,
+		"High":     SeverityHigh,
+		"Critical": SeverityCritical,
+	}
 
-var stringToRiskAppetite = map[string]RiskAppetite{
-	"Zero":     RiskAppetiteZero,
-	"Low":      RiskAppetiteLow,
-	"Moderate": RiskAppetiteModerate,
-	"High":     RiskAppetiteHigh,
-}
+	guidanceTypeToString = map[GuidanceType]string{
+		GuidanceStandard:     "Standard",
+		GuidanceRegulation:   "Regulation",
+		GuidanceBestPractice: "Best Practice",
+		GuidanceFramework:    "Framework",
+	}
 
-var modTypeToString = map[ModType]string{
-	ModAdd:      "Add",
-	ModModify:   "Modify",
-	ModRemove:   "Remove",
-	ModReplace:  "Replace",
-	ModOverride: "Override",
-}
+	stringToGuidanceType = map[string]GuidanceType{
+		"Standard":      GuidanceStandard,
+		"Regulation":    GuidanceRegulation,
+		"Best Practice": GuidanceBestPractice,
+		"Framework":     GuidanceFramework,
+	}
 
-var stringToModType = map[string]ModType{
-	"Add":      ModAdd,
-	"Modify":   ModModify,
-	"Remove":   ModRemove,
-	"Replace":  ModReplace,
-	"Override": ModOverride,
-}
+	riskAppetiteToString = map[RiskAppetite]string{
+		RiskAppetiteZero:     "Zero",
+		RiskAppetiteLow:      "Low",
+		RiskAppetiteModerate: "Moderate",
+		RiskAppetiteHigh:     "High",
+	}
+
+	stringToRiskAppetite = map[string]RiskAppetite{
+		"Zero":     RiskAppetiteZero,
+		"Low":      RiskAppetiteLow,
+		"Moderate": RiskAppetiteModerate,
+		"High":     RiskAppetiteHigh,
+	}
+
+	modTypeToString = map[ModType]string{
+		ModAdd:      "Add",
+		ModModify:   "Modify",
+		ModRemove:   "Remove",
+		ModReplace:  "Replace",
+		ModOverride: "Override",
+	}
+
+	stringToModType = map[string]ModType{
+		"Add":      ModAdd,
+		"Modify":   ModModify,
+		"Remove":   ModRemove,
+		"Replace":  ModReplace,
+		"Override": ModOverride,
+	}
+)
 
 // enumStringer is used by marshal helpers. Implemented by all string-backed enums.
 type enumStringer interface {
@@ -336,6 +357,40 @@ func (r Result) MarshalYAML() (interface{}, error) {
 // MarshalJSON ensures that Result is serialized as a string in JSON
 func (r Result) MarshalJSON() ([]byte, error) {
 	return marshalJSONString(r)
+}
+
+// UnmarshalYAML ensures that Result can be deserialized from a YAML string
+func (r *Result) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToResult, "Result", r)
+}
+
+// UnmarshalJSON ensures that Result can be deserialized from a JSON string
+func (r *Result) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToResult, "Result", r)
+}
+
+func (a ArtifactType) String() string {
+	return artifactTypeToString[a]
+}
+
+// MarshalYAML ensures that ArtifactType is serialized as a string in YAML
+func (a ArtifactType) MarshalYAML() (interface{}, error) {
+	return marshalYAMLString(a)
+}
+
+// MarshalJSON ensures that ArtifactType is serialized as a string in JSON
+func (a ArtifactType) MarshalJSON() ([]byte, error) {
+	return marshalJSONString(a)
+}
+
+// UnmarshalYAML ensures that ArtifactType can be deserialized from a YAML string
+func (a *ArtifactType) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToArtifactType, "ArtifactType", a)
+}
+
+// UnmarshalJSON ensures that ArtifactType can be deserialized from a JSON string
+func (a *ArtifactType) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToArtifactType, "ArtifactType", a)
 }
 
 func (e EntityType) String() string {

@@ -107,6 +107,28 @@ func TestUpdateAggregateResult(t *testing.T) {
 	}
 }
 
+func TestArtifactTypeString(t *testing.T) {
+	tests := []struct {
+		v        ArtifactType
+		expected string
+	}{
+		{ControlCatalogArtifact, "ControlCatalog"},
+		{EvaluationLogArtifact, "EvaluationLog"},
+		{GuidanceCatalogArtifact, "GuidanceCatalog"},
+		{MappingDocumentArtifact, "MappingDocument"},
+		{PolicyArtifact, "Policy"},
+		{ThreatCatalogArtifact, "ThreatCatalog"},
+		{VectorCatalogArtifact, "VectorCatalog"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			if got := tt.v.String(); got != tt.expected {
+				t.Errorf("String() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestLifecycleString(t *testing.T) {
 	tests := []struct {
 		v        Lifecycle
