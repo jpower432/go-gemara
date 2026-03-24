@@ -611,15 +611,27 @@ type MappingDocument struct {
 	Metadata Metadata `json:"metadata" yaml:"metadata"`
 
 	// source-reference identifies the artifact being mapped from; must match a mapping-reference id
-	SourceReference ArtifactMapping `json:"source-reference" yaml:"source-reference"`
+	SourceReference TypedMapping `json:"source-reference" yaml:"source-reference"`
 
 	// target-reference identifies the artifact being mapped to; must match a mapping-reference id
-	TargetReference ArtifactMapping `json:"target-reference" yaml:"target-reference"`
+	TargetReference TypedMapping `json:"target-reference" yaml:"target-reference"`
 
 	// mappings is one or more atomic relationships between entries in the referenced artifacts
 	Mappings []Mapping `json:"mappings" yaml:"mappings"`
 
 	// remarks is prose regarding this mapping document
+	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
+}
+
+// TypedMapping extends ArtifactMapping with a required entry-type for all entries in this direction
+type TypedMapping struct {
+	// entry-type identifies what kind of atomic unit entries in this direction are
+	EntryType EntryType `json:"entry-type" yaml:"entry-type"`
+
+	// ReferenceId should reference the corresponding MappingReference id from metadata
+	ReferenceId string `json:"reference-id" yaml:"reference-id"`
+
+	// remarks is prose regarding the mapped artifact or the mapping relationship
 	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
 }
 
@@ -1079,40 +1091,40 @@ type Vector struct {
 	Applicability []string `json:"applicability,omitempty" yaml:"applicability,omitempty"`
 }
 
-// Mapping represents an atomic relationship between a source entry and an optional target entry
-type Mapping struct {
-	// id allows this mapping to be referenced by other elements
-	Id string `json:"id" yaml:"id"`
+// MappingTarget identifies a target entry with optional per-target metadata
+type MappingTarget struct {
+	// entry-id identifies the specific entry in the target artifact
+	EntryId string `json:"entry-id" yaml:"entry-id"`
 
-	// source identifies the entry being mapped from
-	Source TypedEntry `json:"source" yaml:"source"`
-
-	// target identifies the entry being mapped to; absent when relationship is no-match
-	Target *TypedEntry `json:"target,omitempty" yaml:"target,omitempty"`
-
-	// relationship describes the nature or purpose of the mapping
-	Relationship RelationshipType `json:"relationship" yaml:"relationship"`
-
-	// strength is the author's estimate of how completely the source entry satisfies the target entry; range 1-10
+	// strength is the author's estimate of how completely the source satisfies this target; range 1-10
 	Strength int64 `json:"strength,omitempty" yaml:"strength,omitempty"`
 
 	ConfidenceLevel ConfidenceLevel `json:"confidence-level,omitempty" yaml:"confidence-level,omitempty"`
 
-	// applicability constrains the contexts in which this mapping holds
+	// applicability constrains the contexts in which this target mapping holds
 	Applicability []string `json:"applicability,omitempty" yaml:"applicability,omitempty"`
 
-	// rationale explains why this relationship exists
+	// rationale explains why this relationship exists for this target
 	Rationale string `json:"rationale,omitempty" yaml:"rationale,omitempty"`
 
-	// remarks is general prose regarding this mapping
+	// remarks is general prose regarding this target mapping
 	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
 }
 
-// EntryReference identifies a specific entry within a referenced artifact
-type TypedEntry struct {
-	// entry-id identifies the specific entry in the referenced artifact
-	EntryId string `json:"entry-id" yaml:"entry-id"`
+// Mapping represents a relationship between a source entry and one or more target entries
+type Mapping struct {
+	// id allows this mapping to be referenced by other elements
+	Id string `json:"id" yaml:"id"`
 
-	// entry-type identifies what kind of atomic unit this entry is
-	EntryType EntryType `json:"entry-type" yaml:"entry-type"`
+	// source identifies the entry being mapped from by its entry-id
+	Source string `json:"source" yaml:"source"`
+
+	// targets identifies the entries being mapped to; absent when relationship is no-match
+	Targets []MappingTarget `json:"targets,omitempty" yaml:"targets,omitempty"`
+
+	// relationship describes the nature of the mapping between source and all targets
+	Relationship RelationshipType `json:"relationship" yaml:"relationship"`
+
+	// remarks is general prose regarding this mapping
+	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
 }
