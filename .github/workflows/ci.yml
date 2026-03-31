@@ -20,9 +20,7 @@ jobs:
           go-version: stable
 
       - name: Setup Cue
-        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
-        with:
-          version: latest
+        run: go install cuelang.org/go/cmd/cue@v0.17.0-0.dev.0.20260320151706-d267795de4d3
 
       - name: Regenerate types from Gemara spec
         run: |
