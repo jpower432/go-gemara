@@ -82,6 +82,30 @@ func TestLoad_Policy_HTTP(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to fetch URL; response status: 404 Not Found")
 }
 
+func TestLoad_URLWithQueryParams(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "test-data/good-policy.yaml")
+	}))
+	defer srv.Close()
+	f := &fetcher.HTTP{Client: srv.Client()}
+
+	p, err := Load[Policy](f, srv.URL+"/policy.yaml?token=abc&ref=main")
+	require.NoError(t, err)
+	assert.NotEmpty(t, p.Metadata.Id)
+}
+
+func TestLoad_URLWithFragment(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "test-data/good-policy.yaml")
+	}))
+	defer srv.Close()
+	f := &fetcher.HTTP{Client: srv.Client()}
+
+	p, err := Load[Policy](f, srv.URL+"/policy.yaml#section")
+	require.NoError(t, err)
+	assert.NotEmpty(t, p.Metadata.Id)
+}
+
 // ============================================================================
 // GuidanceCatalog Tests
 // ============================================================================

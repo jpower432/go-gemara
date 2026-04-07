@@ -5,6 +5,7 @@ package gemara
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"path"
 
 	"github.com/gemaraproj/go-gemara/internal/codec"
@@ -18,7 +19,11 @@ type Fetcher interface {
 // Load fetches and decodes a single artifact from the given source.
 // Format (YAML or JSON) is detected from the file extension.
 func Load[T any](f Fetcher, source string) (*T, error) {
-	ext := path.Ext(source)
+	u, err := url.Parse(source)
+	if err != nil {
+		return nil, fmt.Errorf("invalid source %q: %w", source, err)
+	}
+	ext := path.Ext(u.Path)
 	switch ext {
 	case ".yaml", ".yml", ".json":
 	default:
