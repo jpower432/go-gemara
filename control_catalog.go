@@ -6,10 +6,10 @@ import (
 	"github.com/gemaraproj/go-gemara/internal/codec"
 )
 
-// SControlCatalog wraps a ControlCatalog pointer with
-// pre-built indexes for efficient group, control, and requirement lookups.
+// SControlCatalog wraps a ControlCatalog with pre-built indexes for
+// efficient group, control, and requirement lookups.
 type SControlCatalog struct {
-	*ControlCatalog
+	ControlCatalog
 
 	groupsOnce  sync.Once
 	groupsCache []string
@@ -24,18 +24,21 @@ type SControlCatalog struct {
 	requirementsCache map[string][]AssessmentRequirement
 }
 
-// Sugar wraps this ControlCatalog in a SControlCatalog for
-// convenient cached helper access.
+// Sugar wraps this ControlCatalog in a SControlCatalog for convenient
+// cached helper access. Cached results are computed once on first access
+// and never invalidated, so the wrapper should not be reused after the
+// underlying data has changed. Call Sugar again or use FromBase to reset
+// caches.
 func (c *ControlCatalog) Sugar() *SControlCatalog {
-	return &SControlCatalog{ControlCatalog: c}
+	return &SControlCatalog{ControlCatalog: *c}
 }
 
 func (c *SControlCatalog) ToBase() ControlCatalog {
-	return *c.ControlCatalog
+	return c.ControlCatalog
 }
 
 func (c *SControlCatalog) FromBase(s *ControlCatalog) {
-	c.ControlCatalog = s
+	c.ControlCatalog = *s
 	c.groupsOnce = sync.Once{}
 	c.groupsCache = nil
 	c.sugarControlsOnce = sync.Once{}

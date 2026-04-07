@@ -6,27 +6,28 @@ import (
 	"github.com/gemaraproj/go-gemara/internal/codec"
 )
 
-// SControl wraps a Control pointer with cached
-// cross-reference lookups.
+// SControl wraps a Control with cached cross-reference lookups.
 type SControl struct {
-	*Control
+	Control
 
 	referencesOnce  sync.Once
 	referencesCache []string
 }
 
-// Sugar wraps this Control in a SControl for convenient
-// cached helper access.
+// Sugar wraps this Control in a SControl for convenient cached helper
+// access. Cached results are computed once on first access and never
+// invalidated, so the wrapper should not be reused after the underlying
+// data has changed. Call Sugar again or use FromBase to reset caches.
 func (c *Control) Sugar() *SControl {
-	return &SControl{Control: c}
+	return &SControl{Control: *c}
 }
 
 func (c *SControl) ToBase() Control {
-	return *c.Control
+	return c.Control
 }
 
 func (c *SControl) FromBase(s *Control) {
-	c.Control = s
+	c.Control = *s
 	c.referencesOnce = sync.Once{}
 	c.referencesCache = nil
 }
