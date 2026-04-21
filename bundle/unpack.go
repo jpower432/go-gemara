@@ -58,6 +58,7 @@ func Unpack(ctx context.Context, target oras.ReadOnlyTarget, ref string) (*Bundl
 
 		f := File{
 			Name: layerDesc.Annotations[ocispec.AnnotationTitle],
+			Type: layerDesc.Annotations[annotationType],
 			Data: data,
 		}
 

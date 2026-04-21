@@ -23,9 +23,10 @@ const (
 	MediaTypeArtifact = "application/vnd.gemara.artifact.v1+yaml"
 )
 
-// Internal annotation used to distinguish primary artifacts from imports.
+// Internal annotations carried on layer descriptors.
 const (
 	annotationRole = "org.gemara.artifact.role"
+	annotationType = "org.gemara.artifact.type"
 	roleArtifact   = "artifact"
 	roleImport     = "import"
 )
@@ -60,6 +61,8 @@ type Artifact struct {
 type File struct {
 	// Name is the bundle-relative path, e.g. "controls.yaml".
 	Name string
+	// Type is the Gemara artifact type, e.g. "ControlCatalog".
+	Type string
 	// Data is the raw YAML content of the artifact.
 	Data []byte
 }

@@ -25,10 +25,10 @@ func TestPackUnpack(t *testing.T) {
 			bundle: &Bundle{
 				Manifest: Manifest{BundleVersion: "1", GemaraVersion: "v1.0.0"},
 				Files: []File{
-					{Name: "controls.yaml", Data: []byte("id: ctrl-catalog\ncontrols: []")},
+					{Name: "controls.yaml", Type: "ControlCatalog", Data: []byte("id: ctrl-catalog\ncontrols: []")},
 				},
 				Imports: []File{
-					{Name: "imported-guidance.yaml", Data: []byte("id: guidance-import\nguidelines: []")},
+					{Name: "imported-guidance.yaml", Type: "GuidanceCatalog", Data: []byte("id: guidance-import\nguidelines: []")},
 				},
 			},
 			tag: "v1.0.0",
@@ -37,9 +37,11 @@ func TestPackUnpack(t *testing.T) {
 				assert.NotEmpty(t, got.Etag)
 				require.Len(t, got.Files, 1)
 				assert.Equal(t, "controls.yaml", got.Files[0].Name)
+				assert.Equal(t, "ControlCatalog", got.Files[0].Type)
 				assert.Equal(t, original.Files[0].Data, got.Files[0].Data)
 				require.Len(t, got.Imports, 1)
 				assert.Equal(t, "imported-guidance.yaml", got.Imports[0].Name)
+				assert.Equal(t, "GuidanceCatalog", got.Imports[0].Type)
 				assert.Equal(t, original.Imports[0].Data, got.Imports[0].Data)
 			},
 		},
@@ -48,14 +50,16 @@ func TestPackUnpack(t *testing.T) {
 			bundle: &Bundle{
 				Manifest: Manifest{BundleVersion: "1", GemaraVersion: "v1.0.0"},
 				Files: []File{
-					{Name: "controls.yaml", Data: []byte("controls: [one]")},
-					{Name: "threats.yaml", Data: []byte("threats: [two]")},
+					{Name: "controls.yaml", Type: "ControlCatalog", Data: []byte("controls: [one]")},
+					{Name: "threats.yaml", Type: "ThreatCatalog", Data: []byte("threats: [two]")},
 				},
 			},
 			tag: "latest",
 			check: func(t *testing.T, original *Bundle, got *Bundle) {
 				assert.Equal(t, original.Manifest, got.Manifest)
 				require.Len(t, got.Files, 2)
+				assert.Equal(t, "ControlCatalog", got.Files[0].Type)
+				assert.Equal(t, "ThreatCatalog", got.Files[1].Type)
 				assert.Nil(t, got.Imports)
 			},
 		},
@@ -84,6 +88,18 @@ func TestPackUnpack(t *testing.T) {
 				require.Len(t, got.Imports, 1)
 				assert.Equal(t, "a.yaml", got.Files[0].Name)
 				assert.Equal(t, "b.yaml", got.Imports[0].Name)
+			},
+		},
+		{
+			name: "omitted type round-trips as empty string",
+			bundle: &Bundle{
+				Manifest: Manifest{BundleVersion: "1", GemaraVersion: "v1.0.0"},
+				Files:    []File{{Name: "plain.yaml", Data: []byte("data")}},
+			},
+			tag: "no-type",
+			check: func(t *testing.T, _ *Bundle, got *Bundle) {
+				require.Len(t, got.Files, 1)
+				assert.Empty(t, got.Files[0].Type)
 			},
 		},
 	}

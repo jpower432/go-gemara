@@ -70,6 +70,9 @@ func pushLayer(ctx context.Context, target content.Pusher, f File, role string) 
 		ocispec.AnnotationTitle: f.Name,
 		annotationRole:          role,
 	}
+	if f.Type != "" {
+		desc.Annotations[annotationType] = f.Type
+	}
 	if err := pushBlob(ctx, target, desc, f.Data); err != nil {
 		return ocispec.Descriptor{}, fmt.Errorf("pushing %s %s: %w", role, f.Name, err)
 	}
