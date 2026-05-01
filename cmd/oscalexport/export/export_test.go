@@ -125,3 +125,90 @@ controls:
 		require.ErrorContains(t, err, "string was used where mapping is expected")
 	})
 }
+
+func TestEvaluation(t *testing.T) {
+	tempDir := t.TempDir()
+
+	mockYAML := `
+metadata:
+  id: test-eval
+  type: EvaluationLog
+  gemara-version: v1.0.0
+  version: "1.0.0"
+  date: "2025-01-01T00:00:00Z"
+  author:
+    name: test-tool
+    type: Software
+    version: "1.0.0"
+result: Failed
+target:
+  id: sys-1
+  name: Test System
+  type: Software
+evaluations:
+  - name: Test Control
+    result: Failed
+    message: control failed
+    control:
+      entry-id: CTRL-1
+    assessment-logs:
+      - requirement:
+          entry-id: REQ-1
+        description: verify requirement
+        result: Failed
+        message: requirement not met
+        steps-executed: 1
+        start: "2025-01-01T00:00:00Z"
+`
+	inputFilePath := filepath.Join(tempDir, "evaluation.yaml")
+	require.NoError(t, os.WriteFile(inputFilePath, []byte(mockYAML), 0600))
+
+	t.Run("Success/Defaults", func(t *testing.T) {
+		outputFilePath := filepath.Join(t.TempDir(), "assessment-results.json")
+		args := []string{"--output", outputFilePath}
+		err := Evaluation(inputFilePath, args)
+		require.NoError(t, err)
+
+		var model oscal.OscalModels
+		data, err := os.ReadFile(outputFilePath)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal(data, &model))
+		require.NotNil(t, model.AssessmentResults)
+		assert.Contains(t, model.AssessmentResults.Metadata.Title, "test-eval")
+		require.Len(t, model.AssessmentResults.Results, 1)
+	})
+
+	t.Run("Success/WithImportAp", func(t *testing.T) {
+		outputFilePath := filepath.Join(t.TempDir(), "assessment-results.json")
+		args := []string{"--output", outputFilePath, "--import-ap", "#my-ap"}
+		err := Evaluation(inputFilePath, args)
+		require.NoError(t, err)
+
+		var model oscal.OscalModels
+		data, err := os.ReadFile(outputFilePath)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal(data, &model))
+		assert.Equal(t, "#my-ap", model.AssessmentResults.ImportAp.Href)
+	})
+
+	t.Run("Failure/NotExists", func(t *testing.T) {
+		err := Evaluation("non-existent-file.yaml", []string{})
+		require.Error(t, err)
+		assert.ErrorIs(t, err, os.ErrNotExist)
+	})
+
+	t.Run("Failure/InvalidInput", func(t *testing.T) {
+		failYAMLPath := filepath.Join(t.TempDir(), "fail.yaml")
+		require.NoError(t, os.WriteFile(failYAMLPath, []byte("fail"), 0600))
+		err := Evaluation(failYAMLPath, []string{})
+		require.ErrorContains(t, err, "string was used where mapping is expected")
+	})
+
+	t.Run("Failure/InvalidCatalogPath", func(t *testing.T) {
+		outputFilePath := filepath.Join(t.TempDir(), "assessment-results.json")
+		args := []string{"--output", outputFilePath, "--catalog", "non-existent-catalog.yaml"}
+		err := Evaluation(inputFilePath, args)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, os.ErrNotExist)
+	})
+}

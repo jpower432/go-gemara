@@ -20,8 +20,13 @@ func EvaluationLog(log gemara.EvaluationLog) *EvaluationLogConverter {
 }
 
 // ToSARIF converts the EvaluationLog to SARIF format.
-func (c *EvaluationLogConverter) ToSARIF(artifactURI string, catalog *gemara.ControlCatalog) ([]byte, error) {
-	return ToSARIF(c.log, artifactURI, catalog)
+func (c *EvaluationLogConverter) ToSARIF(opts ...EvalOption) ([]byte, error) {
+	return ToSARIF(c.log, opts...)
+}
+
+// ToOSCALAssessmentResults converts the EvaluationLog to an OSCAL Assessment Results document.
+func (c *EvaluationLogConverter) ToOSCALAssessmentResults(opts ...EvalOption) (oscal.AssessmentResults, error) {
+	return EvaluationLogToOSCALAssessmentResults(c.log, opts...)
 }
 
 // ControlCatalogConverter defines a converter for converting ControlCatalog.

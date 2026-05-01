@@ -91,6 +91,43 @@ func Catalog(path string, args []string) error {
 	return WriteOSCALFile(oscalModel, *outputFile)
 }
 
+func Evaluation(path string, args []string) error {
+	cmd := flag.NewFlagSet("evaluation", flag.ExitOnError)
+	outputFile := cmd.String("output", "assessment-results.json", "Path to output file")
+	importApHref := cmd.String("import-ap", "#", "URI referencing the governing assessment plan")
+	catalogPath := cmd.String("catalog", "", "Optional path to a ControlCatalog for enrichment")
+	if err := cmd.Parse(args); err != nil {
+		return err
+	}
+
+	log, err := gemara.Load[gemara.EvaluationLog](context.Background(), &fetcher.File{}, path)
+	if err != nil {
+		return err
+	}
+
+	var opts []gemaraconv.EvalOption
+	opts = append(opts, gemaraconv.WithImportApHref(*importApHref))
+
+	if *catalogPath != "" {
+		catalog, err := gemara.Load[gemara.ControlCatalog](context.Background(), &fetcher.File{}, *catalogPath)
+		if err != nil {
+			return fmt.Errorf("loading catalog %s: %w", *catalogPath, err)
+		}
+		opts = append(opts, gemaraconv.WithCatalog(catalog))
+	}
+
+	ar, err := gemaraconv.EvaluationLogToOSCALAssessmentResults(*log, opts...)
+	if err != nil {
+		return err
+	}
+
+	oscalModel := oscalTypes.OscalModels{
+		AssessmentResults: &ar,
+	}
+
+	return WriteOSCALFile(oscalModel, *outputFile)
+}
+
 func WriteOSCALFile(model oscalTypes.OscalModels, outputFile string) error {
 	oscalJSON, err := json.MarshalIndent(model, "", "  ")
 	if err != nil {
