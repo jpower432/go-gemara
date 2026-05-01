@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package gemaraconv
 
 import "github.com/gemaraproj/go-gemara"
@@ -9,7 +11,7 @@ type generateOpts struct {
 	controlHREF   string
 }
 
-func (g *generateOpts) completeFromGuidance(doc *gemara.GuidanceCatalog) {
+func (g *generateOpts) completeFromGuidance(doc gemara.GuidanceCatalog) {
 	if g.version == "" {
 		g.version = doc.Metadata.Version
 	}
@@ -21,7 +23,7 @@ func (g *generateOpts) completeFromGuidance(doc *gemara.GuidanceCatalog) {
 	}
 }
 
-func (g *generateOpts) completeFromCatalog(catalog *gemara.ControlCatalog) {
+func (g *generateOpts) completeFromCatalog(catalog gemara.ControlCatalog) {
 	if g.version == "" {
 		g.version = catalog.Metadata.Version
 	}
