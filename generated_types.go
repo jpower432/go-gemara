@@ -2,25 +2,24 @@
 
 package gemara
 
-// AuditLog records results from an audit performed against a target resource
-type AuditLog struct {
-	// metadata provides detailed data about this log
+// CapabilityCatalog describes a collection of system capabilities
+type CapabilityCatalog struct {
+	// title describes the purpose of this catalog at a glance
+	Title string `json:"title" yaml:"title"`
+
+	// metadata provides detailed data about this catalog
 	Metadata Metadata `json:"metadata" yaml:"metadata"`
 
-	// owner defines the RACI roles responsible for managing the audit
-	Owner RACI `json:"owner,omitempty" yaml:"owner,omitempty"`
+	// capabilities is a list of capabilities defined by this catalog
+	Capabilities []Capability `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
 
-	// summary provides the high-level conclusion
-	Summary string `json:"summary" yaml:"summary"`
+	// groups contains a list of groups that can be referenced by entries in this catalog
+	Groups []Group `json:"groups,omitempty" yaml:"groups,omitempty"`
 
-	// criteria defines the acceptable state for the audited resource
-	Criteria []ArtifactMapping `json:"criteria" yaml:"criteria"`
+	// extends references catalogs that this catalog builds upon
+	Extends []ArtifactMapping `json:"extends,omitempty" yaml:"extends,omitempty"`
 
-	// results records audit results against the criteria
-	Results []*AuditResult `json:"results" yaml:"results"`
-
-	// target identifies the resource being evaluated
-	Target Resource `json:"target" yaml:"target"`
+	Imports []MultiEntryMapping `json:"imports,omitempty" yaml:"imports,omitempty"`
 }
 
 // Metadata represents common metadata fields shared across all layers
@@ -82,7 +81,9 @@ type Actor struct {
 	// description provides additional context about the entity
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 
-	// uri is a general URI for the entity information
+	// uri is a general URI for the entity information.
+	// Any URI scheme is accepted (e.g. https, file, oci, s3, arn) so entities
+	// hosted outside http(s) can be referenced.
 	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
 }
 
@@ -116,7 +117,15 @@ type MappingReference struct {
 	// description is prose regarding the artifact's purpose or content
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 
-	// url is the path where the artifact may be retrieved; preferably responds with Gemara-compatible YAML/JSON
+	// type is the kind of artifact this reference points at, so a consumer can
+	// tell a control catalog from a guidance catalog without fetching either. It
+	// is stated once per reference rather than on every entry that cites it,
+	// since a catalog holds one kind of entry.
+	Type ArtifactType `json:"type,omitempty" yaml:"type,omitempty"`
+
+	// url is the path where the artifact may be retrieved; preferably responds with Gemara-compatible YAML/JSON.
+	// Any URI scheme is accepted (e.g. https, file, oci, s3, arn) so evidence can be
+	// addressed wherever it actually lives.
 	Url string `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
@@ -139,68 +148,6 @@ type ArtifactMapping struct {
 
 	// remarks is prose regarding the mapped artifact or the mapping relationship
 	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
-}
-
-// RACI defines the roles responsible for managing an artifact
-type RACI struct {
-	// responsible identifies the entities responsible for executing work to manage or mitigate the artifact
-	Responsible []Contact `json:"responsible" yaml:"responsible"`
-
-	// accountable identifies the entity ultimately accountable for the outcome
-	Accountable []Contact `json:"accountable" yaml:"accountable"`
-
-	// consulted identifies entities whose input is required when assessing or responding to the artifact
-	Consulted []Contact `json:"consulted,omitempty" yaml:"consulted,omitempty"`
-
-	// informed identifies entities that should be notified about changes to the artifact status
-	Informed []Contact `json:"informed,omitempty" yaml:"informed,omitempty"`
-}
-
-// Resource represents an entity that exists in the system and can be evaluated
-type Resource struct {
-	// environment describes where the resource exists (e.g., production, staging, development, specific region)
-	Environment string `json:"environment,omitempty" yaml:"environment,omitempty"`
-
-	// id uniquely identifies the entity and allows this entry to be referenced by other elements
-	Id string `json:"id" yaml:"id"`
-
-	// name is the name of the entity
-	Name string `json:"name" yaml:"name"`
-
-	// owner is the contact information for the person or group responsible for managing or owning this resource
-	Owner Contact `json:"owner,omitempty" yaml:"owner,omitempty"`
-
-	// type specifies the type of entity interacting in the workflow
-	Type EntityType `json:"type" yaml:"type"`
-
-	// version is the version of the entity (for tools; if applicable)
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-
-	// description provides additional context about the entity
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-
-	// uri is a general URI for the entity information
-	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
-}
-
-// CapabilityCatalog describes a collection of system capabilities
-type CapabilityCatalog struct {
-	// title describes the purpose of this catalog at a glance
-	Title string `json:"title" yaml:"title"`
-
-	// metadata provides detailed data about this catalog
-	Metadata Metadata `json:"metadata" yaml:"metadata"`
-
-	// capabilities is a list of capabilities defined by this catalog
-	Capabilities []Capability `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
-
-	// groups contains a list of groups that can be referenced by entries in this catalog
-	Groups []Group `json:"groups,omitempty" yaml:"groups,omitempty"`
-
-	// extends references catalogs that this catalog builds upon
-	Extends []ArtifactMapping `json:"extends,omitempty" yaml:"extends,omitempty"`
-
-	Imports []MultiEntryMapping `json:"imports,omitempty" yaml:"imports,omitempty"`
 }
 
 // Capability describes a system capability such as a feature, component or object.
@@ -335,20 +282,51 @@ type EnforcementLog struct {
 	// metadata provides detailed data about this log
 	Metadata Metadata `json:"metadata" yaml:"metadata"`
 
-	// disposition is the aggregate enforcement disposition across all actions in this log
+	// disposition is the aggregate across this log's actions, by the precedence
+	// documented on #Disposition.
 	Disposition Disposition `json:"disposition" yaml:"disposition"`
 
 	// actions is the list of enforcement actions performed
-	//
-	// Enforce that Clear dispositions only contain Passed assessment results
 	Actions []*ActionResult `json:"actions" yaml:"actions"`
 
 	// target identifies the resource being evaluated
 	Target Resource `json:"target" yaml:"target"`
 }
 
+// Resource represents an entity that exists in the system and can be evaluated
+type Resource struct {
+	// environment describes where the resource exists (e.g., production, staging, development, specific region)
+	Environment string `json:"environment,omitempty" yaml:"environment,omitempty"`
+
+	// id uniquely identifies the entity and allows this entry to be referenced by other elements
+	Id string `json:"id" yaml:"id"`
+
+	// name is the name of the entity
+	Name string `json:"name" yaml:"name"`
+
+	// owner is the contact information for the person or group responsible for managing or owning this resource
+	Owner Contact `json:"owner,omitempty" yaml:"owner,omitempty"`
+
+	// type specifies the type of entity interacting in the workflow
+	Type EntityType `json:"type" yaml:"type"`
+
+	// version is the version of the entity (for tools; if applicable)
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+
+	// description provides additional context about the entity
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// uri is a general URI for the entity information.
+	// Any URI scheme is accepted (e.g. https, file, oci, s3, arn) so entities
+	// hosted outside http(s) can be referenced.
+	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
+}
+
 // ActionResult captures a performed enforcement action.
 type ActionResult struct {
+	// id allows this entry to be referenced by other elements
+	Id string `json:"id" yaml:"id"`
+
 	// disposition is the enforcement action taken
 	Disposition Disposition `json:"disposition" yaml:"disposition"`
 
@@ -367,32 +345,86 @@ type ActionResult struct {
 	// steps references the code paths or addresses that carried out this enforcement action
 	Steps []EnforcementStep `json:"steps" yaml:"steps"`
 
-	// justification links the action to its assessment findings and any applicable exceptions
-	Justification Justification `json:"justification" yaml:"justification"`
+	// justification links the action to the findings that prompted it and any
+	// applicable exceptions. A Clear action has nothing to justify, so it is
+	// absent there and required everywhere else.
+	Justification *Justification `json:"justification,omitempty" yaml:"justification,omitempty"`
 }
 
 // Justification provides the assessment data and exception references that justify an enforcement action.
 type Justification struct {
-	// assessments links the action to one or more Assessment Findings
-	Assessments []AssessmentFinding `json:"assessments" yaml:"assessments"`
+	// findings links the action to the findings that justify it. Each carries an
+	// id, so an action or a later log can reference one unambiguously; a log
+	// reference, because an enforcement action reacts to an evaluation, so the
+	// finding it acts on came from one; and a severity, because a finding a gate
+	// acted on is negative by nature. Unlike an audit finding, which may record
+	// conformity as readily as nonconformity, there is nothing to enforce against
+	// good news, and a waived Critical is not a waived Low. This is the grading of
+	// nonconformities that certification bodies work to under ISO/IEC 17021-1,
+	// which #Severity carries.
+	Findings []Finding `json:"findings,omitempty" yaml:"findings,omitempty"`
 
-	// exceptions references approved Policy exceptions that authorize the action
+	// exceptions references the approved exceptions that authorise this action:
+	// a subject that cannot conform has been granted one, so evaluation still
+	// fails and enforcement stands down. Gemara does not model an exception, so
+	// these name external artifacts through the log's mapping-references.
 	Exceptions []ArtifactMapping `json:"exceptions,omitempty" yaml:"exceptions,omitempty"`
 }
 
-// AssessmentFinding maps an enforcement action to its originating assessment data across Layer 2, Layer 3, and Layer 5.
-type AssessmentFinding struct {
-	// result is the assessment outcome that triggered the enforcement action
-	Result Result `json:"result" yaml:"result"`
+// Finding records something an evaluation, an enforcement action or an audit
+// found, together with what became of it.
+//
+// The shape is the one OCSF's Compliance Finding expects, so a finding projects
+// without rearranging.
+type Finding struct {
+	// lifecycle is what became of this finding: still outstanding, dealt with, or
+	// waived because a subject that cannot conform was granted an exception. It
+	// is deliberately not #Disposition, which says what an enforcement gate did.
+	Lifecycle FindingLifecycle `json:"lifecycle,omitempty" yaml:"lifecycle,omitempty"`
 
-	// requirement maps to the Layer 2 assessment requirement that was evaluated
-	Requirement EntryMapping `json:"requirement,omitempty" yaml:"requirement,omitempty"`
+	// id identifies this finding where something references it. A finding
+	// reported against a named check needs none, so it is optional here and
+	// required where it is addressed.
+	Id string `json:"id,omitempty" yaml:"id,omitempty"`
 
-	// plan maps to the Policy assessment plan that was executed
-	Plan EntryMapping `json:"plan,omitempty" yaml:"plan,omitempty"`
+	// control names the control this finding concerns. A finding cites a control
+	// rather than one of its assessment requirements: requirements are what gets
+	// tested, and a control is what gets remediated.
+	Control *EntryMapping `json:"control,omitempty" yaml:"control,omitempty"`
 
-	// log maps to the EvaluationLog entry containing the finding
-	Log EntryMapping `json:"log" yaml:"log"`
+	// log names the evaluation log entry this finding came from, when it came
+	// from one rather than from an auditor reading evidence directly. There is no
+	// plan field beside it: the entry it points at names its own plan, and a second
+	// copy here could only disagree with it.
+	Log *EntryMapping `json:"log,omitempty" yaml:"log,omitempty"`
+
+	// description explains what was found. It is optional because a routine
+	// conclusion needs no prose: a control decided Compliant says enough by
+	// saying so. An override, or anything a reader would question, explains itself.
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// severity states how material the finding is, on the same scale the risk
+	// catalog uses. It is optional here because not every finding rates one: an
+	// audit finding that records conformity has no materiality to state. It is
+	// required where a finding is negative by construction: anything an audit
+	// determines Not Compliant, and every finding in an enforcement
+	// justification.
+	Severity Severity `json:"severity,omitempty" yaml:"severity,omitempty"`
+
+	// recommendations record the corrective actions for this finding.
+	Recommendations []Recommendation `json:"recommendations,omitempty" yaml:"recommendations,omitempty"`
+}
+
+// Recommendation provides a corrective action for a finding.
+type Recommendation struct {
+	// id uniquely identifies this recommendation
+	Id string `json:"id,omitempty" yaml:"id,omitempty"`
+
+	// text describes the recommended corrective action
+	Text string `json:"text" yaml:"text"`
+
+	// required indicates whether this recommendation is a mandatory corrective action
+	Required bool `json:"required" yaml:"required"`
 }
 
 // Entity represents a human or tool
@@ -412,7 +444,9 @@ type Entity struct {
 	// description provides additional context about the entity
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 
-	// uri is a general URI for the entity information
+	// uri is a general URI for the entity information.
+	// Any URI scheme is accepted (e.g. https, file, oci, s3, arn) so entities
+	// hosted outside http(s) can be referenced.
 	Uri string `json:"uri,omitempty" yaml:"uri,omitempty"`
 }
 
@@ -647,12 +681,12 @@ type EvidenceMapping struct {
 	ReferenceId string `json:"reference-id" yaml:"reference-id"`
 
 	// coordinate is the precise location within the stream identified by reference-id
-	// (e.g. an API path, file path, or JSON path expression).
-	// Do not set if entry-id is set.
+	// (e.g. an API path, file path, or JSON path expression). May be combined with
+	// entry-id to identify a sub-location within that entry's output.
 	Coordinate string `json:"coordinate,omitempty" yaml:"coordinate,omitempty"`
 
 	// entry-id identifies a specific entry within a referenced Gemara artifact.
-	// Do not set if coordinate is set.
+	// May be combined with coordinate to identify a sub-location within that entry's output.
 	EntryId string `json:"entry-id,omitempty" yaml:"entry-id,omitempty"`
 
 	// digest is a cryptographic hash of the observed content at collection time; format: algorithm:encoded (e.g. sha256:abc123...)
@@ -660,6 +694,273 @@ type EvidenceMapping struct {
 
 	// remarks is prose regarding this evidence reference
 	Remarks string `json:"remarks,omitempty" yaml:"remarks,omitempty"`
+}
+
+// AuditLog records an audit, including what it examined the target against, what it
+// established for each requirement, what it reports, and what it concludes.
+type AuditLog struct {
+	// metadata provides detailed data about this log
+	Metadata Metadata `json:"metadata" yaml:"metadata"`
+
+	// owner defines the RACI roles responsible for managing the audit
+	Owner *RACI `json:"owner,omitempty" yaml:"owner,omitempty"`
+
+	// opinion is the audit's conclusion in one word, so a consumer of the
+	// attestation need not weigh the findings itself.
+	Opinion Opinion `json:"opinion" yaml:"opinion"`
+
+	// summary is that conclusion in prose, including anything the opinion cannot
+	// carry: what the objectives established, trends across the findings, and the
+	// uncertainty any audit of a moment carries.
+	Summary string `json:"summary" yaml:"summary"`
+
+	// policy is this audit's criteria: the single versioned artifact the evidence
+	// was compared against. It is one policy rather than a list because the policy
+	// also defines scope. The audit's completeness claim needs a governed set to be
+	// complete against.
+	Policy ArtifactMapping `json:"policy" yaml:"policy"`
+
+	// objectives are what this audit set out to establish. They are recorded
+	// because the conclusion has to speak to them. An opinion answers a question,
+	// and without the question a later reader cannot tell whether the audit
+	// achieved what it was for, or judge the scope it settled for.
+	Objectives []string `json:"objectives" yaml:"objectives"`
+
+	// findings are the audit's decisions about control objectives and risks. A
+	// finding about a control decides from the verifications of that control's
+	// requirements. It is absent when the audit had nothing to call out.
+	Findings []*ComplianceFinding `json:"findings,omitempty" yaml:"findings,omitempty"`
+
+	// target identifies the resource being evaluated
+	Target Resource `json:"target" yaml:"target"`
+
+	// verifications are the mechanical checks of each assessment requirement the
+	// policy governs, against the evidence provided. They are complete by
+	// construction, with one entry per requirement including the boring passes,
+	// and carry verification outcomes rather than compliance decisions.
+	Verifications []VerificationLog `json:"verifications" yaml:"verifications"`
+
+	// coverage records, for guidance the policy adopted, the controls this audit
+	// relied on to support each guideline and the findings on them. A guideline is
+	// not testable, so it is judged through this map rather than verified.
+	Coverage []GuidelineCoverage `json:"coverage,omitempty" yaml:"coverage,omitempty"`
+}
+
+// RACI defines the roles responsible for managing an artifact
+type RACI struct {
+	// responsible identifies the entities responsible for executing work to manage or mitigate the artifact
+	Responsible []Contact `json:"responsible" yaml:"responsible"`
+
+	// accountable identifies the entity ultimately accountable for the outcome
+	Accountable []Contact `json:"accountable" yaml:"accountable"`
+
+	// consulted identifies entities whose input is required when assessing or responding to the artifact
+	Consulted []Contact `json:"consulted,omitempty" yaml:"consulted,omitempty"`
+
+	// informed identifies entities that should be notified about changes to the artifact status
+	Informed []Contact `json:"informed,omitempty" yaml:"informed,omitempty"`
+}
+
+// VerificationLog records the mechanical checks for one governed requirement:
+// what was examined, whether the evidence was obtained the way the policy
+// required, and whether it satisfied the requirement. Findings decide from these
+// entries, which establish how far the evidence can be trusted and what it shows.
+type VerificationLog struct {
+	// effective-requirement is what the policy required, resolved at audit time,
+	// so the record says what was audited without fetching the policy or catalog.
+	Effective_requirement EffectiveRequirement `json:"effective-requirement" yaml:"effective-requirement"`
+
+	// outcome is whether the evidence satisfied the requirement.
+	Outcome Determination `json:"outcome" yaml:"outcome"`
+
+	// rationale is what in the evidence established these determinations, for
+	// evidence that does not say so itself. An assessment carries its own result,
+	// so a citation of one needs no restating.
+	Rationale string `json:"rationale,omitempty" yaml:"rationale,omitempty"`
+
+	// assessments are the assessments this audit read, if any.
+	Assessments []EvidenceMapping `json:"assessments,omitempty" yaml:"assessments,omitempty"`
+
+	// evidence records the data sources that support this outcome.
+	Evidence []Evidence `json:"evidence,omitempty" yaml:"evidence,omitempty"`
+
+	// fidelity records whether the evidence was obtained the way the policy
+	// prescribed, as one entry per thing the audit checked. It concerns how the
+	// evidence was produced; whether the requirement was satisfied is outcome.
+	Fidelity []FidelityCheck `json:"fidelity,omitempty" yaml:"fidelity,omitempty"`
+}
+
+// EffectiveRequirement is what a policy required of one assessment requirement,
+// as resolved at audit time: the control it tests, the text as it applied, the
+// applicability that selected it, the constraints the policy attached, and the
+// plan bound to it.
+type EffectiveRequirement struct {
+	// control names the control whose objective this requirement tests. It is
+	// recorded rather than derived because an entry id only suggests its control,
+	// and the audit decides compliance per control.
+	Control EntryMapping `json:"control" yaml:"control"`
+
+	// requirement names the assessment requirement this effective requirement
+	// builds on.
+	Requirement EntryMapping `json:"requirement" yaml:"requirement"`
+
+	// text is the requirement as it applied, after the policy's constraints.
+	Text string `json:"text" yaml:"text"`
+
+	// applicability names the groups under which this requirement was selected.
+	Applicability []string `json:"applicability,omitempty" yaml:"applicability,omitempty"`
+
+	// constraints are the prescriptive additions the policy attached to it.
+	Constraints []EffectiveConstraint `json:"constraints,omitempty" yaml:"constraints,omitempty"`
+
+	// plan-id names the assessment plan bound to this requirement.
+	PlanId string `json:"plan-id,omitempty" yaml:"plan-id,omitempty"`
+}
+
+// EffectiveConstraint is one prescriptive addition a policy attached to a
+// requirement, as it applied.
+type EffectiveConstraint struct {
+	// id identifies this constraint within the policy that attached it.
+	Id string `json:"id" yaml:"id"`
+
+	// text is the constraint as it applied to the requirement.
+	Text string `json:"text" yaml:"text"`
+}
+
+// Evidence records what was cited to support an opinion for a specific activity:
+// raw data for the evaluation layer, evaluation and enforcement artifacts for the audit layer.
+// At least one of payload or source MUST be present; an entry with neither is semantically incomplete.
+type Evidence struct {
+	// id uniquely identifies this evidence
+	Id string `json:"id" yaml:"id"`
+
+	// type categorizes the kind of evidence
+	Type EvidenceType `json:"type" yaml:"type"`
+
+	// collected-at is the timestamp when the evidence was gathered
+	CollectedAt Datetime `json:"collected-at" yaml:"collected-at"`
+
+	// payload is the raw evidence data collected inline
+	Payload any `json:"payload,omitempty" yaml:"payload,omitempty"`
+
+	// source identifies the artifact or system from which this evidence was collected
+	Source *EvidenceMapping `json:"source,omitempty" yaml:"source,omitempty"`
+
+	// description explains what this evidence represents
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+}
+
+// FidelityCheck is one check of how faithfully evidence was obtained to what the
+// policy prescribed, for example: that a method the plan accepts was used, that
+// the executor matches the one the plan names, that a run fell inside the
+// requirement's cadence, that parameter values were within the accepted ones.
+type FidelityCheck struct {
+	// method-id names the accepted method this entry concerns, where it concerns one:
+	// one of the plan's where a plan is bound, or one of the policy's fallback methods
+	// where none is.
+	MethodId string `json:"method-id,omitempty" yaml:"method-id,omitempty"`
+
+	// determination is what the check came to.
+	Determination Determination `json:"determination" yaml:"determination"`
+
+	// required is what the policy prescribed, quoted or derived from it.
+	Required string `json:"required,omitempty" yaml:"required,omitempty"`
+
+	// evidenced is what the evidence showed instead.
+	//
+	// Both are for divergences. A check that passed needs neither: the method and
+	// the determination already say the prescribed thing was done. Restating the
+	// prescription on every passing check makes a complete record unreadable. In
+	// an audit of a real baseline the passing checks outnumber the failing ones
+	// fifty to one. Where the two differ, state both, because the pair is what a
+	// determination alone throws away: required every 30 days, evidenced every 90.
+	Evidenced string `json:"evidenced,omitempty" yaml:"evidenced,omitempty"`
+}
+
+// GuidelineCoverage is how the audit judged one guideline the policy adopted. A
+// guideline is not testable, so nothing verifies it directly: the audit names the
+// controls it relied on to support the guideline and cites the findings on them.
+// The map is recorded here rather than pointed at in a #MappingDocument because
+// an audit is a self-contained record of what it relied on.
+type GuidelineCoverage struct {
+	// guideline names the guideline the policy adopted.
+	Guideline EntryMapping `json:"guideline" yaml:"guideline"`
+
+	// statement is the guideline as the policy adopted it, resolved at audit time
+	// so the record says what was judged without fetching the catalog.
+	Statement string `json:"statement" yaml:"statement"`
+
+	// controls are the controls the audit relied on to support the guideline.
+	// Absent means nothing in scope supports it.
+	Controls []EntryMapping `json:"controls,omitempty" yaml:"controls,omitempty"`
+
+	// findings are the ids of this audit's findings, on those controls, that bear
+	// on the guideline.
+	Findings []string `json:"findings,omitempty" yaml:"findings,omitempty"`
+
+	// rationale is how the audit reads the map: what the controls cover of the
+	// guideline and what they leave uncovered. It is required where no control
+	// supports the guideline.
+	Rationale string `json:"rationale,omitempty" yaml:"rationale,omitempty"`
+}
+
+// ComplianceFinding is the audit's decision about one control's objective, or
+// about a risk. It does not restate the verification outcomes it decides from;
+// it says what they mean for compliance, which takes an auditor's reasoning.
+type ComplianceFinding struct {
+	// lifecycle is what became of this finding: still outstanding, dealt with, or
+	// waived because a subject that cannot conform was granted an exception. It
+	// is deliberately not #Disposition, which says what an enforcement gate did.
+	Lifecycle FindingLifecycle `json:"lifecycle,omitempty" yaml:"lifecycle,omitempty"`
+
+	// status is the audit's decision about the control's objective or the risk.
+	Status ComplianceStatus `json:"status" yaml:"status"`
+
+	// id uniquely identifies this finding within the audit. It is declared here
+	// rather than in the #Finding core because a finding reported against a named
+	// check needs no id of its own. This one is reported in its own right.
+	//
+	// id identifies this finding where something references it. A finding
+	// reported against a named check needs none, so it is optional here and
+	// required where it is addressed.
+	Id string `json:"id" yaml:"id"`
+
+	// control names the control this finding concerns. A finding cites a control
+	// rather than one of its assessment requirements: requirements are what gets
+	// tested, and a control is what gets remediated.
+	Control *EntryMapping `json:"control,omitempty" yaml:"control,omitempty"`
+
+	// log names the evaluation log entry this finding came from, when it came
+	// from one rather than from an auditor reading evidence directly. There is no
+	// plan field beside it: the entry it points at names its own plan, and a second
+	// copy here could only disagree with it.
+	Log *EntryMapping `json:"log,omitempty" yaml:"log,omitempty"`
+
+	// description explains what was found. It is optional because a routine
+	// conclusion needs no prose: a control decided Compliant says enough by
+	// saying so. An override, or anything a reader would question, explains itself.
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// response names the enforcement action that produced this finding's current
+	// lifecycle: the gate that blocked it, the remediation that resolved it, or the
+	// tolerated action whose exception waived it.
+	Response *EntryMapping `json:"response,omitempty" yaml:"response,omitempty"`
+
+	// risk names the risk this finding concerns, when it concerns one: a residual
+	// risk beyond its category's tolerance, for example. A finding names a control,
+	// through the #Finding core, or a risk.
+	Risk *EntryMapping `json:"risk,omitempty" yaml:"risk,omitempty"`
+
+	// severity states how material the finding is, on the same scale the risk
+	// catalog uses. It is optional here because not every finding rates one: an
+	// audit finding that records conformity has no materiality to state. It is
+	// required where a finding is negative by construction: anything an audit
+	// determines Not Compliant, and every finding in an enforcement
+	// justification.
+	Severity Severity `json:"severity,omitempty" yaml:"severity,omitempty"`
+
+	// recommendations record the corrective actions for this finding.
+	Recommendations []Recommendation `json:"recommendations,omitempty" yaml:"recommendations,omitempty"`
 }
 
 // Policy represents a policy document with metadata, contacts, scope, imports, implementation plan, risks, and adherence requirements.
@@ -915,65 +1216,6 @@ type Principle struct {
 
 // Email represents a validated email address pattern
 type Email string
-
-// AuditResult records a single result with supporting evidence and recommendations.
-type AuditResult struct {
-	// id uniquely identifies this result
-	Id string `json:"id" yaml:"id"`
-
-	// title describes this result at a glance
-	Title string `json:"title" yaml:"title"`
-
-	// type classifies the nature of this result
-	Type ResultType `json:"type" yaml:"type"`
-
-	// description explains the result in detail
-	Description string `json:"description" yaml:"description"`
-
-	// criteria-reference maps this result to specific criteria entries
-	CriteriaReference MultiEntryMapping `json:"criteria-reference" yaml:"criteria-reference"`
-
-	// evidence records the data sources that support this result
-	Evidence []Evidence `json:"evidence,omitempty" yaml:"evidence,omitempty"`
-
-	// recommendations records corrective actions for this result
-	Recommendations []Recommendation `json:"recommendations,omitempty" yaml:"recommendations,omitempty"`
-}
-
-// Evidence records what was cited to support an opinion for a specific activity:
-// raw data for the evaluation layer, evaluation and enforcement artifacts for the audit layer.
-// At least one of payload or source MUST be present; an entry with neither is semantically incomplete.
-type Evidence struct {
-	// id uniquely identifies this evidence
-	Id string `json:"id" yaml:"id"`
-
-	// type categorizes the kind of evidence
-	Type EvidenceType `json:"type" yaml:"type"`
-
-	// collected-at is the timestamp when the evidence was gathered
-	CollectedAt Datetime `json:"collected-at" yaml:"collected-at"`
-
-	// payload is the raw evidence data collected inline
-	Payload any `json:"payload,omitempty" yaml:"payload,omitempty"`
-
-	// source identifies the artifact or system from which this evidence was collected
-	Source EvidenceMapping `json:"source,omitempty" yaml:"source,omitempty"`
-
-	// description explains what this evidence represents
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-}
-
-// Recommendation provides a corrective action for an audit result
-type Recommendation struct {
-	// id uniquely identifies this recommendation
-	Id string `json:"id,omitempty" yaml:"id,omitempty"`
-
-	// text describes the recommended corrective action
-	Text string `json:"text" yaml:"text"`
-
-	// required indicates whether this recommendation is a mandatory corrective action
-	Required bool `json:"required" yaml:"required"`
-}
 
 // A RiskCatalog is a structured collection of documented risks that may affect an organization,
 // system, or service. It provides a centralized reference for risks that can be mapped to threats

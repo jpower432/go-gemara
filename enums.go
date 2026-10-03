@@ -57,6 +57,18 @@ type ModType int
 // ResultType defines the nature of an audit result
 type ResultType int
 
+// FindingLifecycle describes what became of a finding.
+type FindingLifecycle int
+
+// Determination describes the outcome of a performed verification.
+type Determination int
+
+// ComplianceStatus describes an audit's decision about a control objective or risk.
+type ComplianceStatus int
+
+// Opinion describes an audit's conclusion about its target as a whole.
+type Opinion int
+
 // EvidenceType categorizes the kind of evidence referenced in an audit
 type EvidenceType string
 
@@ -191,6 +203,33 @@ const (
 	ResultStrength
 	ResultFinding
 	ResultGap
+)
+
+const (
+	FindingLifecycleOpen FindingLifecycle = iota
+	FindingLifecycleResolved
+	FindingLifecycleWaived
+)
+
+const (
+	DeterminationSatisfied Determination = iota
+	DeterminationNotSatisfied
+	DeterminationNotApplicable
+	DeterminationUndetermined
+)
+
+const (
+	ComplianceStatusCompliant ComplianceStatus = iota
+	ComplianceStatusNotCompliant
+	ComplianceStatusNotApplicable
+	ComplianceStatusUndetermined
+)
+
+const (
+	OpinionPassed Opinion = iota
+	OpinionPassedWithConditions
+	OpinionFailed
+	OpinionUndetermined
 )
 
 var (
@@ -448,6 +487,60 @@ var (
 		"Strength":    ResultStrength,
 		"Finding":     ResultFinding,
 		"Gap":         ResultGap,
+	}
+
+	findingLifecycleToString = map[FindingLifecycle]string{
+		FindingLifecycleOpen:     "Open",
+		FindingLifecycleResolved: "Resolved",
+		FindingLifecycleWaived:   "Waived",
+	}
+
+	stringToFindingLifecycle = map[string]FindingLifecycle{
+		"Open":     FindingLifecycleOpen,
+		"Resolved": FindingLifecycleResolved,
+		"Waived":   FindingLifecycleWaived,
+	}
+
+	determinationToString = map[Determination]string{
+		DeterminationSatisfied:     "Satisfied",
+		DeterminationNotSatisfied:  "Not Satisfied",
+		DeterminationNotApplicable: "Not Applicable",
+		DeterminationUndetermined:  "Undetermined",
+	}
+
+	stringToDetermination = map[string]Determination{
+		"Satisfied":      DeterminationSatisfied,
+		"Not Satisfied":  DeterminationNotSatisfied,
+		"Not Applicable": DeterminationNotApplicable,
+		"Undetermined":   DeterminationUndetermined,
+	}
+
+	complianceStatusToString = map[ComplianceStatus]string{
+		ComplianceStatusCompliant:     "Compliant",
+		ComplianceStatusNotCompliant:  "Not Compliant",
+		ComplianceStatusNotApplicable: "Not Applicable",
+		ComplianceStatusUndetermined:  "Undetermined",
+	}
+
+	stringToComplianceStatus = map[string]ComplianceStatus{
+		"Compliant":      ComplianceStatusCompliant,
+		"Not Compliant":  ComplianceStatusNotCompliant,
+		"Not Applicable": ComplianceStatusNotApplicable,
+		"Undetermined":   ComplianceStatusUndetermined,
+	}
+
+	opinionToString = map[Opinion]string{
+		OpinionPassed:               "Passed",
+		OpinionPassedWithConditions: "Passed with Conditions",
+		OpinionFailed:               "Failed",
+		OpinionUndetermined:         "Undetermined",
+	}
+
+	stringToOpinion = map[string]Opinion{
+		"Passed":                 OpinionPassed,
+		"Passed with Conditions": OpinionPassedWithConditions,
+		"Failed":                 OpinionFailed,
+		"Undetermined":           OpinionUndetermined,
 	}
 )
 
@@ -980,6 +1073,98 @@ func (r *ResultType) UnmarshalJSON(data []byte) error {
 // UnmarshalText lets yaml.v3-family decoders deserialize ResultType from a string
 func (r *ResultType) UnmarshalText(data []byte) error {
 	return unmarshalTextEnum(data, stringToResultType, "ResultType", r)
+}
+
+func (f FindingLifecycle) String() string {
+	if s, ok := findingLifecycleToString[f]; ok {
+		return s
+	}
+	return fmt.Sprintf("FindingLifecycle(%d)", f)
+}
+
+func (f FindingLifecycle) MarshalYAML() (interface{}, error) { return marshalYAMLString(f) }
+
+func (f FindingLifecycle) MarshalJSON() ([]byte, error) { return marshalJSONString(f) }
+
+func (f *FindingLifecycle) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToFindingLifecycle, "FindingLifecycle", f)
+}
+
+func (f *FindingLifecycle) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToFindingLifecycle, "FindingLifecycle", f)
+}
+
+func (f *FindingLifecycle) UnmarshalText(data []byte) error {
+	return unmarshalTextEnum(data, stringToFindingLifecycle, "FindingLifecycle", f)
+}
+
+func (d Determination) String() string {
+	if s, ok := determinationToString[d]; ok {
+		return s
+	}
+	return fmt.Sprintf("Determination(%d)", d)
+}
+
+func (d Determination) MarshalYAML() (interface{}, error) { return marshalYAMLString(d) }
+
+func (d Determination) MarshalJSON() ([]byte, error) { return marshalJSONString(d) }
+
+func (d *Determination) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToDetermination, "Determination", d)
+}
+
+func (d *Determination) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToDetermination, "Determination", d)
+}
+
+func (d *Determination) UnmarshalText(data []byte) error {
+	return unmarshalTextEnum(data, stringToDetermination, "Determination", d)
+}
+
+func (c ComplianceStatus) String() string {
+	if s, ok := complianceStatusToString[c]; ok {
+		return s
+	}
+	return fmt.Sprintf("ComplianceStatus(%d)", c)
+}
+
+func (c ComplianceStatus) MarshalYAML() (interface{}, error) { return marshalYAMLString(c) }
+
+func (c ComplianceStatus) MarshalJSON() ([]byte, error) { return marshalJSONString(c) }
+
+func (c *ComplianceStatus) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToComplianceStatus, "ComplianceStatus", c)
+}
+
+func (c *ComplianceStatus) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToComplianceStatus, "ComplianceStatus", c)
+}
+
+func (c *ComplianceStatus) UnmarshalText(data []byte) error {
+	return unmarshalTextEnum(data, stringToComplianceStatus, "ComplianceStatus", c)
+}
+
+func (o Opinion) String() string {
+	if s, ok := opinionToString[o]; ok {
+		return s
+	}
+	return fmt.Sprintf("Opinion(%d)", o)
+}
+
+func (o Opinion) MarshalYAML() (interface{}, error) { return marshalYAMLString(o) }
+
+func (o Opinion) MarshalJSON() ([]byte, error) { return marshalJSONString(o) }
+
+func (o *Opinion) UnmarshalYAML(data []byte) error {
+	return unmarshalYAMLEnum(data, stringToOpinion, "Opinion", o)
+}
+
+func (o *Opinion) UnmarshalJSON(data []byte) error {
+	return unmarshalJSONEnum(data, stringToOpinion, "Opinion", o)
+}
+
+func (o *Opinion) UnmarshalText(data []byte) error {
+	return unmarshalTextEnum(data, stringToOpinion, "Opinion", o)
 }
 
 // ToArtifactType converts an EvidenceType to the corresponding ArtifactType.

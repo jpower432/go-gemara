@@ -658,3 +658,165 @@ func TestEvidenceTypeJSONRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+type findingEnumCase[T ~int] struct {
+	value T
+	want  string
+}
+
+func testFindingEnum[T ~int](
+	t *testing.T,
+	values []findingEnumCase[T],
+	stringify func(T) string,
+	marshalJSON func(T) ([]byte, error),
+	marshalYAML func(T) (interface{}, error),
+	unmarshalJSON func(*T, []byte) error,
+	unmarshalYAML func(*T, []byte) error,
+	unmarshalText func(*T, []byte) error,
+	unknown T,
+	unknownString string,
+) {
+	t.Helper()
+
+	for _, tt := range values {
+		t.Run(tt.want, func(t *testing.T) {
+			if got := stringify(tt.value); got != tt.want {
+				t.Errorf("String() = %q, want %q", got, tt.want)
+			}
+
+			jsonData, err := marshalJSON(tt.value)
+			if err != nil {
+				t.Fatalf("MarshalJSON: %v", err)
+			}
+			if got := string(jsonData); got != `"`+tt.want+`"` {
+				t.Errorf("MarshalJSON() = %s, want %q", jsonData, tt.want)
+			}
+			var fromJSON T
+			if err := unmarshalJSON(&fromJSON, jsonData); err != nil {
+				t.Fatalf("UnmarshalJSON: %v", err)
+			}
+			if fromJSON != tt.value {
+				t.Errorf("JSON round-trip = %v, want %v", fromJSON, tt.value)
+			}
+
+			yamlData, err := marshalYAML(tt.value)
+			if err != nil {
+				t.Fatalf("MarshalYAML: %v", err)
+			}
+			if got, ok := yamlData.(string); !ok || got != tt.want {
+				t.Errorf("MarshalYAML() = %#v, want %q", yamlData, tt.want)
+			}
+			var fromYAML T
+			if err := unmarshalYAML(&fromYAML, []byte(tt.want)); err != nil {
+				t.Fatalf("UnmarshalYAML: %v", err)
+			}
+			if fromYAML != tt.value {
+				t.Errorf("YAML round-trip = %v, want %v", fromYAML, tt.value)
+			}
+
+			var fromText T
+			if err := unmarshalText(&fromText, []byte(tt.want)); err != nil {
+				t.Fatalf("UnmarshalText: %v", err)
+			}
+			if fromText != tt.value {
+				t.Errorf("text round-trip = %v, want %v", fromText, tt.value)
+			}
+		})
+	}
+
+	if got := stringify(unknown); got != unknownString {
+		t.Errorf("String() for unknown value = %q, want %q", got, unknownString)
+	}
+
+	for name, unmarshal := range map[string]func(*T, []byte) error{
+		"JSON": unmarshalJSON,
+		"YAML": unmarshalYAML,
+		"text": unmarshalText,
+	} {
+		t.Run("rejects invalid "+name, func(t *testing.T) {
+			var value T
+			data := []byte("Not a valid value")
+			if name == "JSON" {
+				data = []byte(`"Not a valid value"`)
+			}
+			if err := unmarshal(&value, data); err == nil {
+				t.Fatal("expected error for invalid enum value")
+			}
+		})
+	}
+}
+
+func TestFindingLifecycleSerialization(t *testing.T) {
+	testFindingEnum(t,
+		[]findingEnumCase[FindingLifecycle]{
+			{FindingLifecycleOpen, "Open"},
+			{FindingLifecycleResolved, "Resolved"},
+			{FindingLifecycleWaived, "Waived"},
+		},
+		func(v FindingLifecycle) string { return v.String() },
+		func(v FindingLifecycle) ([]byte, error) { return v.MarshalJSON() },
+		func(v FindingLifecycle) (interface{}, error) { return v.MarshalYAML() },
+		func(v *FindingLifecycle, data []byte) error { return v.UnmarshalJSON(data) },
+		func(v *FindingLifecycle, data []byte) error { return v.UnmarshalYAML(data) },
+		func(v *FindingLifecycle, data []byte) error { return v.UnmarshalText(data) },
+		FindingLifecycle(99),
+		"FindingLifecycle(99)",
+	)
+}
+
+func TestDeterminationSerialization(t *testing.T) {
+	testFindingEnum(t,
+		[]findingEnumCase[Determination]{
+			{DeterminationSatisfied, "Satisfied"},
+			{DeterminationNotSatisfied, "Not Satisfied"},
+			{DeterminationNotApplicable, "Not Applicable"},
+			{DeterminationUndetermined, "Undetermined"},
+		},
+		func(v Determination) string { return v.String() },
+		func(v Determination) ([]byte, error) { return v.MarshalJSON() },
+		func(v Determination) (interface{}, error) { return v.MarshalYAML() },
+		func(v *Determination, data []byte) error { return v.UnmarshalJSON(data) },
+		func(v *Determination, data []byte) error { return v.UnmarshalYAML(data) },
+		func(v *Determination, data []byte) error { return v.UnmarshalText(data) },
+		Determination(99),
+		"Determination(99)",
+	)
+}
+
+func TestComplianceStatusSerialization(t *testing.T) {
+	testFindingEnum(t,
+		[]findingEnumCase[ComplianceStatus]{
+			{ComplianceStatusCompliant, "Compliant"},
+			{ComplianceStatusNotCompliant, "Not Compliant"},
+			{ComplianceStatusNotApplicable, "Not Applicable"},
+			{ComplianceStatusUndetermined, "Undetermined"},
+		},
+		func(v ComplianceStatus) string { return v.String() },
+		func(v ComplianceStatus) ([]byte, error) { return v.MarshalJSON() },
+		func(v ComplianceStatus) (interface{}, error) { return v.MarshalYAML() },
+		func(v *ComplianceStatus, data []byte) error { return v.UnmarshalJSON(data) },
+		func(v *ComplianceStatus, data []byte) error { return v.UnmarshalYAML(data) },
+		func(v *ComplianceStatus, data []byte) error { return v.UnmarshalText(data) },
+		ComplianceStatus(99),
+		"ComplianceStatus(99)",
+	)
+}
+
+func TestOpinionSerialization(t *testing.T) {
+	testFindingEnum(t,
+		[]findingEnumCase[Opinion]{
+			{OpinionPassed, "Passed"},
+			{OpinionPassedWithConditions, "Passed with Conditions"},
+			{OpinionFailed, "Failed"},
+			{OpinionUndetermined, "Undetermined"},
+		},
+		func(v Opinion) string { return v.String() },
+		func(v Opinion) ([]byte, error) { return v.MarshalJSON() },
+		func(v Opinion) (interface{}, error) { return v.MarshalYAML() },
+		func(v *Opinion, data []byte) error { return v.UnmarshalJSON(data) },
+		func(v *Opinion, data []byte) error { return v.UnmarshalYAML(data) },
+		func(v *Opinion, data []byte) error { return v.UnmarshalText(data) },
+		Opinion(99),
+		"Opinion(99)",
+	)
+}
