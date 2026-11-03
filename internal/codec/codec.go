@@ -29,6 +29,15 @@ func DecodeJSON(reader io.Reader, target interface{}) error {
 	return nil
 }
 
+// UnmarshalJSON decodes JSON bytes directly, preserving JSON string escapes
+// and avoiding YAML-specific unmarshallers. Unknown fields are ignored.
+func UnmarshalJSON(data []byte, target interface{}) error {
+	if err := json.Unmarshal(data, target); err != nil {
+		return fmt.Errorf("error decoding JSON: %w", err)
+	}
+	return nil
+}
+
 // MarshalYAML marshals an object to YAML bytes.
 func MarshalYAML(v interface{}) ([]byte, error) {
 	return yaml.Marshal(v)

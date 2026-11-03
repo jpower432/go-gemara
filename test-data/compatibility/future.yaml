@@ -1,0 +1,13 @@
+metadata:
+  id: synthetic-future-catalog
+  type: FutureCatalog
+  gemara-version: '1.99.0-rc.1+build.7'
+  version: '2030.1'
+  description: Synthetic artifact written against a future Gemara v1 schema.
+  author:
+    id: synthetic-author
+    name: Synthetic Author
+future:
+  state: future-state
+  counter: 900719925474099312345
+  ratio: 0.1000000000000000000001

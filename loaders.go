@@ -4,6 +4,7 @@ package gemara
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -34,13 +35,21 @@ func DetectType(data []byte) (ArtifactType, error) {
 // in-memory counterpart to [Load], for callers that already hold the bytes
 // (for example from bundle.Unpack) and so have no source URL to fetch.
 //
-// JSON is decoded as a subset of YAML, so no format detection is needed.
-// Unknown fields are ignored, letting artifacts written against a newer
-// Gemara schema decode into the types this version supports; the unknown
-// keys are dropped rather than preserved, so re-serializing writes only
-// the schema version this library is at.
+// Valid JSON is decoded with the JSON codec and YAML with the YAML codec, so
+// format-specific syntax (notably JSON string escapes) is handled by the
+// matching decoder. Unknown fields are ignored, letting artifacts written
+// against a newer Gemara schema decode into the types this version supports;
+// those fields are dropped rather than preserved. Decode is therefore a
+// legacy typed view, not a lossless reader: use ReadDocument and Project when
+// the original document and its unknowns must be retained.
 func Decode[T any](data []byte) (*T, error) {
 	var target T
+	if json.Valid(data) {
+		if err := codec.UnmarshalJSON(data, &target); err != nil {
+			return nil, err
+		}
+		return &target, nil
+	}
 	if err := codec.UnmarshalYAML(data, &target); err != nil {
 		return nil, err
 	}

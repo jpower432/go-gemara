@@ -79,6 +79,63 @@ func main() {
 }
 ```
 
+`Load` and `Decode` are typed convenience readers. They ignore unknown
+fields, apply only the schema version linked into this SDK, and do not
+provide a lossless view of newer or extended documents.
+
+#### Reading Without Interpretation
+
+Use `ReadDocument` when the original content must be retained, including
+unknown fields, enum values, prose, and exact numeric values from any
+Gemara v1 schema version.
+
+```go
+raw, err := os.ReadFile("path/to/artifact.yaml")
+if err != nil {
+    panic(err)
+}
+doc, err := gemara.ReadDocument(raw)
+if err != nil {
+    panic(err)
+}
+metadata := doc.Metadata()
+
+// Raw returns the exact input bytes; Node and JSON expose the retained tree.
+if !bytes.Equal(doc.Raw(), raw) {
+    panic("read altered the source bytes")
+}
+
+// Project is a separate, opt-in typed view. It reports fields this SDK does
+// not understand instead of silently dropping them.
+projection, err := doc.Project()
+if err != nil {
+    panic(err)
+}
+if len(projection.Unsupported) > 0 {
+    // Interpret these as compatibility findings before acting on the model.
+    fmt.Println(projection.Unsupported)
+}
+```
+
+#### Writing Artifacts
+
+`EncodeArtifactJSON` and `EncodeArtifactYAML` write registered generated
+models using the schema version linked into this SDK. They replace
+`metadata.gemara-version` with that version, preserve the artifact's own
+`metadata.version`, and never mutate the caller's value.
+
+```go
+encoded, err := gemara.EncodeArtifactYAML(policy)
+if err != nil {
+    panic(err)
+}
+```
+
+Passing a `*Document` makes the encoder refuse any content that does not
+project cleanly, rather than writing a lossy conversion. A typed model has
+already discarded fields this SDK does not know about, and a successful
+encode is not by itself full CUE schema validation.
+
 #### Converting to OSCAL
 
 ```go

@@ -429,6 +429,29 @@ controls:
 
 // Decode goes through the same codec as Load, so the older-schema key
 // aliases (families -> groups) apply to in-memory bytes too.
+// JSON has its own decoder, but the legacy tolerance for unknown keys is the
+// same: newer artifacts still decode into the fields this version knows.
+func TestDecode_JSONIgnoresUnknownKeys(t *testing.T) {
+	data := []byte(`{"future-top-level-key":"dropped","metadata":{"type":"ControlCatalog",` +
+		`"id":"test-catalog","future-metadata-key":"dropped"},` +
+		`"controls":[{"id":"TEST-01","title":"Test Control","future-control-key":"dropped"}]}`)
+
+	catalog, err := Decode[ControlCatalog](data)
+	require.NoError(t, err)
+	assert.Equal(t, "test-catalog", catalog.Metadata.Id)
+	require.Len(t, catalog.Controls, 1)
+	assert.Equal(t, "TEST-01", catalog.Controls[0].Id)
+}
+
+func TestDecode_JSONUnknownEnumError(t *testing.T) {
+	data := []byte(`{"metadata":{"type":"ControlCatalog","id":"test-catalog"},` +
+		`"controls":[{"id":"TEST-01","state":"future-state"}]}`)
+
+	_, err := Decode[ControlCatalog](data)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `invalid Lifecycle: "future-state"`)
+}
+
 func TestDecode_AppliesSchemaAliases(t *testing.T) {
 	data := []byte(`
 metadata:

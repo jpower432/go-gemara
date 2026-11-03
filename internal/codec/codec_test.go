@@ -79,3 +79,25 @@ func TestMarshalUnmarshalYAML(t *testing.T) {
 		t.Errorf("UnmarshalYAML() got = %v, want %v", target.Field, "value")
 	}
 }
+
+func TestUnmarshalJSON_PreservesEscapedProse(t *testing.T) {
+	data := []byte(`{"field":"\u003ctag\u003e \u0026 \"quotes\""}`)
+	var target dummyStruct
+	if err := UnmarshalJSON(data, &target); err != nil {
+		t.Fatalf("UnmarshalJSON() error = %v", err)
+	}
+	want := `<tag> & "quotes"`
+	if target.Field != want {
+		t.Errorf("UnmarshalJSON() got = %q, want %q", target.Field, want)
+	}
+}
+
+func TestUnmarshalJSON_UnknownFieldIgnored(t *testing.T) {
+	var target dummyStruct
+	if err := UnmarshalJSON([]byte(`{"field":"value","future-key":"extra"}`), &target); err != nil {
+		t.Fatalf("UnmarshalJSON() error = %v, want nil for unknown field", err)
+	}
+	if target.Field != "value" {
+		t.Errorf("UnmarshalJSON() got = %q, want %q", target.Field, "value")
+	}
+}
