@@ -62,5 +62,5 @@ func TestDocumentCycleIsDetected(t *testing.T) {
 	}
 
 	_, err := d.JSON()
-	requireDocumentError(t, err, "unsupported_value", "/self")
+	_ = requireDocumentError(t, err, "unsupported_value", "/self")
 }

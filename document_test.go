@@ -112,7 +112,7 @@ func TestReadDocumentVersionErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := ReadDocument([]byte(tc.raw))
-			requireDocumentError(t, err, tc.kind, tc.path)
+			_ = requireDocumentError(t, err, tc.kind, tc.path)
 		})
 	}
 }
@@ -218,7 +218,7 @@ func TestDocumentJSONRefusesUnsupportedValues(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = d.JSON()
-			requireDocumentError(t, err, "unsupported_value", tc.path)
+			_ = requireDocumentError(t, err, "unsupported_value", tc.path)
 		})
 	}
 }
