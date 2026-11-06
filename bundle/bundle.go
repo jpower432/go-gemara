@@ -5,6 +5,11 @@
 // retrieving Gemara artifacts in OCI-compliant registries.
 package bundle
 
+import (
+	"bytes"
+	"slices"
+)
+
 const (
 	// DefaultSizeLimitBytes caps bundle reads at 256 MB.
 	DefaultSizeLimitBytes int64 = 256 * 1024 * 1024
@@ -116,6 +121,63 @@ type AssembleOption func(*assembleOptions)
 
 type assembleOptions struct {
 	continueOnError bool
+	resolvedGraph   *ResolvedGraph
+}
+
+// ResolvedGraph supplies a complete, already-selected dependency graph to
+// Assemble. Node keys identify acquisition contexts, not artifact IDs or URLs.
+// The caller owns binding authorization and target identity/type/version checks.
+// Assemble validates graph completeness and projects it without acquisition.
+type ResolvedGraph struct {
+	Root  string
+	Nodes []ResolvedNode
+	Edges []ResolvedEdge
+}
+
+// ResolvedNode contains the original authored bytes at one acquisition context.
+// Distinct keys may contain identical bytes; compatible copies become one file.
+type ResolvedNode struct {
+	Key  string
+	Data []byte
+}
+
+// ResolvedEdge binds one authored required operation to an already-selected node.
+// Ordinal is zero-based across all operations of From: Policy imports are ordered
+// policies, catalogs, guidance; catalog operations are ordered extends, imports.
+// Relationship is respectively policy, catalog, guidance, extends, or import.
+// ReferenceID and DeclaredURL must exactly match the authored declaration, even
+// when ReferenceID is an alias for To's metadata.id or DeclaredURL is empty.
+type ResolvedEdge struct {
+	From, To     string
+	Relationship string
+	Ordinal      int
+	ReferenceID  string
+	DeclaredURL  string
+}
+
+// WithResolvedGraph snapshots a complete graph for explicit-graph assembly.
+// Root must identify a node whose bytes equal the source passed to Assemble.
+// No Fetcher is used, including on invalid graphs; NewAssembler(nil) is valid
+// with this option. An empty graph is an error, not a request for URL traversal.
+// Imports receive deterministic content-addressed names; source.Name is retained.
+// Pack and Unpack use the existing format: artifact inventory and adjacency, not
+// the original per-context binding/provenance records. Without this option the
+// legacy URL-based assembly behavior and naming remain unchanged.
+func WithResolvedGraph(g ResolvedGraph) AssembleOption {
+	snapshot := cloneResolvedGraph(g)
+	return func(o *assembleOptions) {
+		copy := cloneResolvedGraph(snapshot)
+		o.resolvedGraph = &copy
+	}
+}
+
+func cloneResolvedGraph(g ResolvedGraph) ResolvedGraph {
+	g.Nodes = slices.Clone(g.Nodes)
+	for i := range g.Nodes {
+		g.Nodes[i].Data = bytes.Clone(g.Nodes[i].Data)
+	}
+	g.Edges = slices.Clone(g.Edges)
+	return g
 }
 
 // WithContinueOnError makes Assemble populate Bundle.Warnings instead of

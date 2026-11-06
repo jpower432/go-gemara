@@ -15,12 +15,14 @@ import (
 )
 
 // Assembler walks the full import graph of Gemara artifacts and produces
-// a self-contained Bundle with all transitive dependencies fetched.
+// a self-contained Bundle with all transitive dependencies fetched. WithResolvedGraph
+// instead supplies a complete graph without acquisition.
 type Assembler struct {
 	fetcher gemara.Fetcher
 }
 
-// NewAssembler creates an Assembler backed by the given Fetcher.
+// NewAssembler creates an Assembler backed by the given Fetcher. The Fetcher may
+// be nil when Assemble is called with WithResolvedGraph.
 func NewAssembler(f gemara.Fetcher) *Assembler {
 	return &Assembler{fetcher: f}
 }
@@ -34,6 +36,14 @@ type parsedFile struct {
 	refIDs      []string
 	refURLs     map[string]string
 	mappingRefs []gemara.MappingReference
+	refSlots    []referenceSlot
+}
+
+// referenceSlot retains authored operation order, including empty IDs so explicit
+// graphs can reject malformed slots rather than silently skipping them.
+type referenceSlot struct {
+	relationship string
+	referenceID  string
 }
 
 // parseFile decodes a Gemara YAML file into either a gemara.Catalog
@@ -57,7 +67,7 @@ func parseFile(f File) (*parsedFile, error) {
 		pf.artType = pol.Metadata.Type
 		pf.mappingRefs = pol.Metadata.MappingReferences
 		pf.refURLs = mappingRefURLs(pol.Metadata.MappingReferences)
-		pf.refIDs = policyRefIDs(pol.Imports)
+		pf.refSlots = policyReferenceSlots(pol.Imports)
 	default:
 		var cat gemara.Catalog
 		if err := codec.UnmarshalYAML(f.Data, &cat); err != nil {
@@ -68,8 +78,9 @@ func parseFile(f File) (*parsedFile, error) {
 		pf.artType = cat.Metadata.Type
 		pf.mappingRefs = cat.Metadata.MappingReferences
 		pf.refURLs = mappingRefURLs(cat.Metadata.MappingReferences)
-		pf.refIDs = catalogRefIDs(cat.Extends, cat.Imports)
+		pf.refSlots = catalogReferenceSlots(cat.Extends, cat.Imports)
 	}
+	pf.refIDs = referenceIDs(pf.refSlots)
 
 	return pf, nil
 }
@@ -77,7 +88,8 @@ func parseFile(f File) (*parsedFile, error) {
 // Assemble parses the source file, fetches every artifact referenced in
 // its extends and imports via mapping-references URLs, then recursively
 // parses fetched artifacts for their own references until the full
-// dependency tree is resolved.
+// dependency tree is resolved. WithResolvedGraph instead validates and projects
+// the supplied graph, without using the Fetcher or resolving any target.
 func (a *Assembler) Assemble(ctx context.Context, m Manifest, source File, opts ...AssembleOption) (*Bundle, error) {
 	var aopts assembleOptions
 	for _, o := range opts {
@@ -85,6 +97,9 @@ func (a *Assembler) Assemble(ctx context.Context, m Manifest, source File, opts 
 	}
 	if source.Name == "" {
 		return nil, fmt.Errorf("source file is required")
+	}
+	if aopts.resolvedGraph != nil {
+		return assembleResolved(ctx, m, source, *aopts.resolvedGraph, aopts.continueOnError)
 	}
 
 	seen := make(map[string]bool)
@@ -192,38 +207,37 @@ func mappingRefURLs(refs []gemara.MappingReference) map[string]string {
 	return m
 }
 
-// catalogRefIDs collects all reference IDs from extends and catalog-style imports.
-func catalogRefIDs(extends []gemara.ArtifactMapping, imports []gemara.MultiEntryMapping) []string {
-	var ids []string
+func catalogReferenceSlots(extends []gemara.ArtifactMapping, imports []gemara.MultiEntryMapping) []referenceSlot {
+	var slots []referenceSlot
 	for _, ext := range extends {
-		if ext.ReferenceId != "" {
-			ids = append(ids, ext.ReferenceId)
-		}
+		slots = append(slots, referenceSlot{relationship: "extends", referenceID: ext.ReferenceId})
 	}
 	for _, imp := range imports {
-		if imp.ReferenceId != "" {
-			ids = append(ids, imp.ReferenceId)
-		}
+		slots = append(slots, referenceSlot{relationship: "import", referenceID: imp.ReferenceId})
 	}
-	return ids
+	return slots
 }
 
-// policyRefIDs collects all reference IDs from a Policy's typed imports.
-func policyRefIDs(imports gemara.Imports) []string {
-	var ids []string
+func policyReferenceSlots(imports gemara.Imports) []referenceSlot {
+	var slots []referenceSlot
 	for _, p := range imports.Policies {
-		if p.ReferenceId != "" {
-			ids = append(ids, p.ReferenceId)
-		}
+		slots = append(slots, referenceSlot{relationship: "policy", referenceID: p.ReferenceId})
 	}
 	for _, c := range imports.Catalogs {
-		if c.ReferenceId != "" {
-			ids = append(ids, c.ReferenceId)
-		}
+		slots = append(slots, referenceSlot{relationship: "catalog", referenceID: c.ReferenceId})
 	}
 	for _, g := range imports.Guidance {
-		if g.ReferenceId != "" {
-			ids = append(ids, g.ReferenceId)
+		slots = append(slots, referenceSlot{relationship: "guidance", referenceID: g.ReferenceId})
+	}
+	return slots
+}
+
+// referenceIDs preserves legacy traversal's omission of empty operation IDs.
+func referenceIDs(slots []referenceSlot) []string {
+	var ids []string
+	for _, slot := range slots {
+		if slot.referenceID != "" {
+			ids = append(ids, slot.referenceID)
 		}
 	}
 	return ids

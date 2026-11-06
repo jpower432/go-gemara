@@ -13,7 +13,30 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"oras.land/oras-go/v2/content/memory"
+	"oras.land/oras-go/v2/content/oci"
 )
+
+func TestResolvedGraphPackUnpackOCILayout(t *testing.T) {
+	source, graph := resolvedFixture(t)
+	built := assembleGraph(t, source, graph)
+	store, err := oci.New(t.TempDir())
+	require.NoError(t, err)
+	ctx := context.Background()
+	desc, err := Pack(ctx, store, built, WithVersion("1.3.0"))
+	require.NoError(t, err)
+	require.NoError(t, store.Tag(ctx, desc, "1.3.0"))
+	unpacked, err := Unpack(ctx, store, "1.3.0")
+	require.NoError(t, err)
+	assert.Equal(t, built.Manifest, unpacked.Manifest)
+	assert.Equal(t, source.Data, unpacked.Source.Data)
+	assert.Equal(t, built.Source, unpacked.Source)
+	assert.Equal(t, built.Imports, unpacked.Imports)
+	assert.Equal(t, desc.Digest.Hex(), unpacked.Etag)
+	byID := graphInventory(t, unpacked)
+	require.Len(t, byID, 5)
+	assert.Equal(t, []string{byID["SA"].Name}, byID["A"].Dependencies)
+	assert.Equal(t, []string{byID["SB"].Name}, byID["B"].Dependencies)
+}
 
 func TestPackUnpack(t *testing.T) {
 	tests := []struct {

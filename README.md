@@ -221,6 +221,54 @@ func main() {
 }
 ```
 
+#### Assembling an Already-Resolved Dependency Graph
+
+Applications with an authoritative dependency resolver can supply its complete
+graph to the standard assembler. This mode never invokes a Fetcher, including on
+invalid input; it does not resolve URLs or select bindings. The caller remains
+responsible for authorizing aliases and validating target identity, type and
+version. Node keys identify acquisition contexts, so relative URLs may refer to
+different targets in different contexts without changing the authored bytes.
+
+```go
+graph := bundle.ResolvedGraph{
+	Root: "policy-context",
+	Nodes: []bundle.ResolvedNode{
+		{Key: "policy-context", Data: policyBytes},
+		{Key: "catalog-context", Data: catalogBytes},
+	},
+	Edges: []bundle.ResolvedEdge{
+		{From: "policy-context", To: "catalog-context", Relationship: "catalog",
+			Ordinal: 0, ReferenceID: "catalog-ref", DeclaredURL: "catalog.yaml"},
+	},
+}
+b, err := bundle.NewAssembler(nil).Assemble(ctx, manifest,
+	bundle.File{Name: "policy.yaml", Data: policyBytes}, bundle.WithResolvedGraph(graph))
+// Handle err, then use the same bundle.Pack and bundle.Unpack APIs as above.
+```
+
+Each required import/extends operation must have exactly one matching edge,
+including operations whose authored URL is empty. Ordinals are zero-based across
+Policy imports in policies/catalogs/guidance order, or catalog extends/imports
+order. Informational metadata references do not create dependency edges. Missing
+required edges are fatal even with `WithContinueOnError`; that option only permits
+unmatched informational URL-less mapping-reference warnings.
+
+The SDK validates graph completeness, rejects unreachable inputs and incompatible
+mirror adjacency, and packages compatible byte-identical contexts once. Imports
+are sorted and named `sha256-<full-content-digest>.yaml`; the source name is
+preserved and reserved (a colliding import uses `sha256-<digest>-import.yaml`).
+Dependency filenames follow authored operation order, including repeated
+operations. Artifact bytes, comments and URLs are never rewritten. Treat filenames
+as bundle-internal addresses, rather than assuming URL basenames or Git fragment
+paths. The existing manifest preserves inventory and adjacency, not the original
+per-context binding/provenance records; Unpack does not replay authored URLs or
+recover alias bindings independently. Without `WithResolvedGraph`, legacy
+URL-based assembly and naming are unchanged.
+
+See [`ExampleWithResolvedGraph`](https://pkg.go.dev/github.com/gemaraproj/go-gemara/bundle#example-WithResolvedGraph)
+for a runnable example, including an explicit URL-less alias binding.
+
 #### Converting to SARIF
 
 ```go
